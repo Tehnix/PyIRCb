@@ -1,0 +1,22 @@
+,----------------------------------------------------------------------------,
+| .            .                    .      .           .        .            |
+|     ///////////////////// .////////////////   .  //////               .    |
+|    /////////////////////  //////////////////    //////      .     .        |  
+|    .     //////   .        .         //////    //////                      |   
+| .       //////        .      //////////////   //////////////////       .   |
+|        //////   .          ///////////////   //////////////////            |
+|       //////                    .  //////   //////      //////    .        |
+|   .  //////            //////////////////  //////   .  //////             .|
+|     //////    .       /////////////////   //////      //////   b0t         |
+| .         .         .    Puppynix & Optical     .        .           .     |
+|----------------------------------------------------------------------------|
+|                    T3hb0t - A Python based IRC bot                         |
+|----------------------------------------------------------------------------|  
+|Author: Puppynix (and of course my main man Optical ;) ! )                  |
+|Info: T3hb0t is an IRC bot client capable of connecting to multiple servers |
+|and channels. Easily customized and easy to add commands.                   | 
+|                                                                            |
+|Default operator prefix is ! . Can be set with -o option. If using -i <pass>|
+|to identify, the nick must be registered beforehand (some servers require   |
+|email activation !).                                                        |
+|______-________-________-________-________-________-________-________-______|
