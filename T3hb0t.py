@@ -40,7 +40,7 @@ parser_desc = """
 |----------------------------------------------------------------------------|
 |                    T3hb0t - A Python based IRC bot                         |
 |----------------------------------------------------------------------------|  
-|Author: Puppynix, Optical and speakeasy !                                   |
+|Author: Puppynix,  (Optical and speakeasy)                                  |
 |Info: T3hb0t is an IRC bot client capable of connecting to multiple servers |
 |and channels. Easily customized and easy to add commands.                   | 
 |                                                                            |
