@@ -34,7 +34,24 @@
                 
                 Help can be found with the usual -h option, but here is the list of 
                 commands/options anyways.
+                -h :For help (output given below this list !)
+                -r :Runs the bot (must have a saved setting, use -s to do this)
+                -u :Runs the bot with the specified arguments.
+                   :Usage -u <nick> <host> <port> <channels>
+                -s :Saves a setting to the database (can then be run with -r)
+                   :Usage -s <id> <nick> <host> <port> <channels>
+                -j :Runs the bot and uses setting with given id (use -s to set this)
+                   :Usage -j <id>
+                -a :Adds a bot admin account to the admin table.
+                -i :Makes the bot identify with nickserv using the set password
+                   :Usage -i <password>
+                -d :Deletes a saved setting with the specified id
+                   :Usage -d <id>
+                -g :Gets a list of settings stored in the database
+                -c :Deletes all settings !
                 
+                
+                $Python T3hb0t.py -h
                 Usage: T3hb0t.py [options]
                 
                 Options:

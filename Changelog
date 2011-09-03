@@ -1,0 +1,9 @@
+######################### Changelog for T3hb0t #########################
+    - Added option parser for CLI launching
+    - Added SSL support
+    - Added proxy support and changed to third-party module, socks.py (not fully functional)
+    - Moved around the code for readability
+    - Bugfixes
+    
+    
+########################################################################
