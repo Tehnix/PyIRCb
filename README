@@ -7,7 +7,7 @@
                         //////                    .  //////   //////      //////    .        
                     .  //////            //////////////////  //////   .  //////             .
                       //////    .       /////////////////   //////      //////   b0t         
-                  .         .         .    Puppynix & Optical     .        .           .     
+                  .         .       .   Puppynix & Optical & Speakeasy     .     .     .     
                 ,----------------------------------------------------------------------------,
                 |                    T3hb0t - A Python based IRC bot                         |
                 '----------------------------------------------------------------------------'
@@ -15,7 +15,7 @@
                 | 0x00 :                            Author                                   |
                 '----------------------------------------------------------------------------'
                 
-                Puppynix, and of course my main man Optical ;) !
+                Puppynix, Optical and speakeasy !
                 
                 ,----------------------------------------------------------------------------,
                 | 0x01 :                            Info                                     |
@@ -45,6 +45,8 @@
                 -a :Adds a bot admin account to the admin table.
                 -i :Makes the bot identify with nickserv using the set password
                    :Usage -i <password>
+                -p :Connects using a proxy (<type>: SOCKS4 = 1, SOCKS5 = 2, HTTP = 3).
+                   :Usage -p <type> <server> <port>
                 -d :Deletes a saved setting with the specified id
                    :Usage -d <id>
                 -g :Gets a list of settings stored in the database
@@ -63,6 +65,7 @@
                                         be run with -r). Usage: -i <pass>
                   -g, --get             Print the variables set
                   -c, --clear           Clear all variables
+                  -l, --ssl             Use SSL to connect
                   -j JUST, --just=JUST  Connect just to server with id. Usage: -j <id>
                   -o CMD_OP, --operator=CMD_OP
                                         Sets operator sign to be used as prefix to commands.
@@ -72,6 +75,9 @@
                   -a ADD_ADMIN, --admin=ADD_ADMIN
                                         Adds admin to database. Usage: -a <username>
                                         <password>
+                  -p PROXY, --proxy=PROXY
+                                          Set a proxy to use (types. SOCKS4 = 1, SOCKS5 = 2,
+                                          HTTP = 3). Usage: -p <Proxy type> <server> <port>
                   -u USE, --use=USE     Starts bot with specified settings. Usage: -u <nick>
                                         <host> <port> <channels>
                   -s SET, --set=SET     Saves a setting. Usage: -s <id> <nick> <host> <port>
