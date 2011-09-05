@@ -1,4 +1,6 @@
-######################### Changelog for T3hb0t #########################
+------------------------ Changelog for T3hb0t ------------------------ 
+    - Login and logout functions
+    - Functions added: Database items and handle for tutorials, tools, request, books and delete of item
     - Added option parser for CLI launching
     - Added SSL support
     - Added proxy support and changed to third-party module, socks.py (not fully functional)
@@ -6,4 +8,4 @@
     - Bugfixes
     
     
-########################################################################
+-----------------------------------------------------------------------

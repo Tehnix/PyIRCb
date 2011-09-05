@@ -165,6 +165,7 @@ class BotOptparse(threading.Thread):
 
 
 
+
 class BotAdmins(threading.Thread):
     """Creates and manages the admins, plus the loggedin dictionary."""
     
@@ -244,6 +245,7 @@ class BotAdmins(threading.Thread):
             self.sqlcon.commit()
             print "\nAdmin %s has been updated !\n\n" % username
     
+
 
 
 
@@ -342,7 +344,6 @@ class IrcBot(threading.Thread):
                 self.sock.settimeout(300)
             try:
                 self.sock.connect((self.hostname, self.port))
-                pass
             except socket.gaierror:
                 if profiling: print "Either wrong hostname or no connection. Trying again..."
                 time.sleep(10)
@@ -350,7 +351,8 @@ class IrcBot(threading.Thread):
             except ssl.SSLError:
                 if profiling: print "Problem has occured with SSL connecting to %s:%s ! (check you're using the right port)" % (self.hostname, self.port,)
                 break
-            self.join()
+            else:
+                self.join()
     
     def disconnect(self, reason,*time):
         """Disconnects handled here for the various ways we might loose or drop the connection."""
@@ -382,10 +384,10 @@ class IrcBot(threading.Thread):
         for channel in self.channels:
             self.sock.send("JOIN :%s\r\n" % channel)
         while True:
-            self.readdata = self.sock.recv(4096)
-            if profiling: print self.readdata
-            self.disconnect(self.readdata)
             try:
+                self.readdata = self.sock.recv(4096)
+                if profiling: print self.readdata
+                self.disconnect(self.readdata)
                 # PING PONG, so we don't get disconnected
                 if self.readdata[0:4] == "PING":
                     self.sock.send("PONG  %s\r\n" % self.readdata.split()[1])
@@ -454,7 +456,7 @@ class IrcBot(threading.Thread):
                 self.disconnect("socket.timeout")
                 break
             except (KeyboardInterrupt, SystemExit):
-                self.disconnect("PART")
+                self.disconnect("socket.timeout")
                 break
             except socket.error:
                 self.disconnect("socket.error")
@@ -547,6 +549,7 @@ class IrcBot(threading.Thread):
             else:
                 self.composemessage("Not logged in !", self.readdata)
     
+
 
 
 
