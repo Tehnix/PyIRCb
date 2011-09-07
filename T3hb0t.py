@@ -199,12 +199,11 @@ class BotAdmins(threading.Thread):
     
     def check_loggedin(self, username):
         """Check if user is logged in or not."""
-        if username in self.admins:
-            # Return True is user is already loggedin
+        try:
             if self.loggedin[username] == 1:
                 return True
-            else:
-                return False
+        except KeyError:
+            return False
     
     def login(self, sock, recipient, reply_type, username,*text):
         self.readdata = text[0]
@@ -225,8 +224,10 @@ class BotAdmins(threading.Thread):
     def logout(self, username):
         """Logs out the user."""
         # If nickname was an admin, makes sure log out is done
-        if username in self.admins:
+        try:
             self.loggedin[username] = 0
+        except KeyError:
+            pass
     
     def add_admin(self, username, password):
         self.sqlcon = sqlite3.connect(self.sqldatabase)
@@ -262,7 +263,13 @@ class IrcBot(threading.Thread):
             self.cmd_operator = options.cmd_op
         else:
             self.cmd_operator = "!"
-        self.bot_identify = bot_identify
+        # Set the connection and identification values
+        self.hostname = host
+        self.port = port
+        self.realname = realname
+        self.nickname = nick
+        self.idents = ident
+        self.channels = chan
         # Help message
         self.help_list = [self.cmd_operator+"Login <password> :: Logs in the nickname.",
                           self.cmd_operator+"Logout :: Logs out the nickname.",
@@ -300,17 +307,10 @@ class IrcBot(threading.Thread):
         # Set if bot will identify
         if options.identify:
             print "The bot will try to identify with password %s !" % options.identify
-            bot_identify = True
+            self.bot_identify = True
             self.bot_password = options.identify
         else:
-            bot_identify = False
-        # Set the connection and identification values
-        self.hostname = host
-        self.port = port
-        self.realname = realname
-        self.nickname = nick
-        self.idents = ident
-        self.channels = chan
+            self.bot_identify = False
         # Define the readbuffer
         self.readbuffer = ""
         threading.Thread.__init__(self)
@@ -428,7 +428,7 @@ class IrcBot(threading.Thread):
             try:
                 # Look for matches in listen_to_list
                 if len(self.readdata.split()) > 3:
-                    for listen_item in listen_to_list:
+                    for listen_item in self.listen_to_list:
                         # If the item matches
                         if lower(self.readdata.split()[3]) == lower(":%s%s" % (self.cmd_operator, listen_item)):
                             # If it has arguments
