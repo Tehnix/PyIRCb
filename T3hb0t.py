@@ -171,11 +171,9 @@ class BotAdmins(threading.Thread):
     
     def __init__(self):
         self.sqldatabase = sqldatabase
-        # Predefined admins
-        self.admins = {"Puppynix":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809",
-                       "Optical":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809",
-                       "OpticalForce":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809",
-                       "Speakeasy":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809"}
+        # Predefined admins. The key is the username and the
+        # value is a sha224 of the password
+        self.admins = {"AdminName":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809"}
         self.master_admins = {}
         for admin in self.admins:
             self.master_admins[admin] = self.admins[admin]
