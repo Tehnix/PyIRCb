@@ -3,5 +3,8 @@
 # We avoid .pyc files since they are unnecessary
 *.pyc
 
+# We don't wan't the database either
+BotDatabase.db
+
 # Keeping them .gitignore files incase we ignore enitre content of folder
 !.gitignore
