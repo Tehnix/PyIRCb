@@ -1,11 +1,14 @@
 ------------------------ Changelog for T3hb0t ------------------------ 
+1.0.1
+    - Ported code to python3
+    - Removed third-party module, socks.py
+    - Moved updater script into seperate file updater.py
+1.0.0
     - Login and logout functions
     - Functions added: Database items and handle for tutorials, tools, request, books and delete of item
     - Added option parser for CLI launching
     - Added SSL support
     - Added proxy support and changed to third-party module, socks.py (not fully functional)
     - Moved around the code for readability
-    - Bugfixes
-    
-    
+    - Bugfixes    
 -----------------------------------------------------------------------

@@ -1,29 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# General modules
-
 from optparse import *
 import threading
 import socket
-import socks # <-- socket module that supports proxy
 import ssl
 import time
 import random
 from hashlib import sha224
 from inspect import *
-from string import lower,upper
-# BotUpdate, BotCommands
-import os
 # BotCommands
+import os
 import sys
 import platform
-# BotUpdate
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
 import sqlite3
-import signal
-import zipfile
+
+from updater import *
 
 parser_desc = """
 ,----------------------------------------------------------------------------,
@@ -47,7 +38,8 @@ parser_desc = """
 |Default operator prefix is ! . Can be set with -o option. If using -i <pass>|
 |to identify, the nick must be registered beforehand (some servers require   |
 |email activation !).                                                        |
-|______-________-________-________-________-________-________-________-______|"""
+|______-________-________-________-________-________-________-________-______|
+"""
 
 parser_usg = """%prog [options]"""
 
@@ -69,9 +61,7 @@ parser.add_option("-o", "--operator", dest="cmd_op", action="store", nargs=1,
 parser.add_option("-d", "--del", dest="del_id", action="store", nargs=1,
                   help="Deletes setting with id. Usage: -d <id>")
 parser.add_option("-a", "--admin", dest="add_admin", action="store", nargs=2,
-                  help="Adds admin to database. Usage: -a <username> <password>")
-parser.add_option("-p", "--proxy", dest="proxy", action="store", nargs=3,
-                  help="Set a proxy to use (types. SOCKS4 = 1, SOCKS5 = 2, HTTP = 3). Usage: -p <Proxy type> <server> <port>")             
+                  help="Adds admin to database. Usage: -a <username> <password>")           
 parser.add_option("-u", "--use", dest="use", action="store", nargs=4,
                   help="Starts bot with specified settings. Usage: -u <nick> <host> <port> <channels>")
 parser.add_option("-s", "--set", dest="set", action="store", nargs=5,
@@ -80,11 +70,11 @@ parser.add_option("-s", "--set", dest="set", action="store", nargs=5,
 (options, args) = parser.parse_args()
 
 # Bot version number
-bot_version = "1.0.0"
+BOT_VERSION = "1.0.1"
 # Bot deployment details
-bot_deployment = ".py"
+BOT_DEPLOYMENT = ".py"
 # For debugging
-profiling = True
+PROFILING = True
 # The database file
 sqldatabase = "BotDatabase.db"
 
@@ -123,7 +113,7 @@ class BotOptparse(threading.Thread):
         sqlcursor = sqlcon.cursor()
         sqlcursor.execute('SELECT * FROM settings')
         for row in sqlcursor:
-            if profiling: print("\n\nStarting thread with id: %s" % row[0])
+            if PROFILING: print("\n\nStarting thread with id: %s" % row[0])
             ircbot = IrcBot(row[2], int(row[3]), row[1], row[1], row[1], row[4].split())
             thread = threading.Thread(target=ircbot.connect)
             thread.start()
@@ -132,7 +122,7 @@ class BotOptparse(threading.Thread):
         # Check for valid port
         if options.use[2] != "6667" and options.use[2] != "6697":
             print("\n\nNote that the port is %s and not 6667 or 6697 !\n\n" % options.use[2])
-        if profiling: print("\n\nStarting script with -u !")
+        if PROFILING: print("\n\nStarting script with -u !")
         ircbot = IrcBot(options.use[1], int(options.use[2]), options.use[0], options.use[0], options.use[0], options.use[3].split())
         thread = threading.Thread(target=ircbot.connect)
         thread.start()
@@ -143,7 +133,7 @@ class BotOptparse(threading.Thread):
         search_query = [options.just]
         sqlcursor.execute('SELECT * FROM settings WHERE id=?', search_query)
         for row in sqlcursor:
-            if profiling: print("\n\nStarting thread with id: %s" % row[0])
+            if PROFILING: print("\n\nStarting thread with id: %s" % row[0])
             ircbot = IrcBot(row[2], int(row[3]), row[1], row[1], row[1], row[4].split())
             thread = threading.Thread(target=ircbot.connect)
             thread.start()
@@ -315,39 +305,24 @@ class IrcBot(threading.Thread):
     
     def connect(self):
         """Tries to connect to the server. Retries if fails, otherwise, just moves onto self.join()"""
-        if profiling: print("Starting connect !")
+        if PROFILING: print("Starting connect !")
         while True:
-            # Proxy connection
-            if options.proxy:
-                self.sock = socks.socksocket()
-                print(options.proxy)
-                self.proxy_host = socket.gethostbyaddr(options.proxy[1])[0]
-                print("Using %s proxy through %s:%s !" % (options.proxy[0], self.proxy_host, options.proxy[2],))
-                if options.proxy[0] == "1":
-                    self.proxy_type = socks.PROXY_TYPE_SOCKS4
-                elif options.proxy[0] == "2":
-                    self.proxy_type = socks.PROXY_TYPE_SOCKS5
-                elif options.proxy[0] == "3":
-                    self.proxy_type = socks.PROXY_TYPE_HTTP
-                self.sock.setproxy(self.proxy_type, self.proxy_host, int(options.proxy[2]))
-            # Regular connection
-            else:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                if options.ssl:
-                    if profiling: print("Wrapping socket in SSL !")
-                    self.sock = ssl.wrap_socket(self.sock)
-                # This allows the socket address to be reused and sets the timeout value
-                # so we know if we lost the connection.
-                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.sock.settimeout(300)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if options.ssl:
+                if PROFILING: print("Wrapping socket in SSL !")
+                self.sock = ssl.wrap_socket(self.sock)
+            # This allows the socket address to be reused and sets the timeout value
+            # so we know if we lost the connection.
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.settimeout(300)
             try:
                 self.sock.connect((self.hostname, self.port))
             except socket.gaierror:
-                if profiling: print("Either wrong hostname or no connection. Trying again...")
+                if PROFILING: print("Either wrong hostname or no connection. Trying again...")
                 time.sleep(10)
                 continue
             except ssl.SSLError:
-                if profiling: print("Problem has occured with SSL connecting to %s:%s ! (check you're using the right port)" % (self.hostname, self.port,))
+                if PROFILING: print("Problem has occured with SSL connecting to %s:%s ! (check you're using the right port)" % (self.hostname, self.port,))
                 break
             else:
                 self.join()
@@ -356,12 +331,12 @@ class IrcBot(threading.Thread):
         """Disconnects handled here for the various ways we might loose or drop the connection."""
         # If we get disconnected from the server
         if reason == 0:
-            if profiling: print("Disconnected from server !")
+            if PROFILING: print("Disconnected from server !")
             self.sock.close()
             self.connect()
         # If the socket times out
         elif reason == "socket.timeout" or reason == "socket.error":
-            if profiling: print("Lost Connection (socket.timeout/socket.error). Reconnecting...")
+            if PROFILING: print("Lost Connection (socket.timeout/socket.error). Reconnecting...")
             self.connect()
         elif reason == "PART" or reason == "QUIT":
             self.sock.send("%s\r\n" % reason)
@@ -372,7 +347,7 @@ class IrcBot(threading.Thread):
     
     def join(self):
         """Here we set the nickname and userinfo, and joins the channels. Upon succes self.listen() is started."""
-        if profiling: print("Starting join !")
+        if PROFILING: print("Starting join !")
         # Send nickname and userinfo to the server
         self.sock.send("NICK %s\r\n" % self.nickname)
         self.sock.send("USER %s %s +iw :%s\r\n" % (self.idents, self.hostname, self.realname))
@@ -384,21 +359,21 @@ class IrcBot(threading.Thread):
         while True:
             try:
                 self.readdata = self.sock.recv(4096)
-                if profiling: print(self.readdata)
+                if PROFILING: print(self.readdata)
                 self.disconnect(self.readdata)
                 # PING PONG, so we don't get disconnected
                 if self.readdata[0:4] == "PING":
                     self.sock.send("PONG  %s\r\n" % self.readdata.split()[1])
                 # If nickname already in use, restart the process with a new nickname
                 if "%s :Nickname is already in use" % self.nickname in self.readdata:
-                    if profiling: print("Nickname already in use. Changing nick and reconnecting...")
+                    if PROFILING: print("Nickname already in use. Changing nick and reconnecting...")
                     self.nickname = self.nickname + str(time.time())[5:-3]
                     self.sock.close()
                     self.connect()
                     break
                 # Some servers request CTCP before we can connect to channels
                 if "\x01VERSION\x01" in self.readdata:
-                    if profiling: print("CTCP request, waiting and joining channels !")
+                    if PROFILING: print("CTCP request, waiting and joining channels !")
                     time.sleep(2)
                     for channel in self.channels:
                         self.sock.send("JOIN :%s\r\n" % channel)
@@ -417,10 +392,10 @@ class IrcBot(threading.Thread):
     
     def listen(self):
         """This is were we define what commands or other things we need to look for."""             
-        if profiling: print("Starting listen !")
+        if PROFILING: print("Starting listen !")
         while True:
             self.readdata = self.sock.recv(4096)
-            if profiling: print(self.readdata)
+            if PROFILING: print(self.readdata)
             self.disconnect(self.readdata)
             self.sender_nickname = self.readdata.split("!")[0][1:]
             try:
@@ -428,7 +403,7 @@ class IrcBot(threading.Thread):
                 if len(self.readdata.split()) > 3:
                     for listen_item in self.listen_to_list:
                         # If the item matches
-                        if lower(self.readdata.split()[3]) == lower(":%s%s" % (self.cmd_operator, listen_item)):
+                        if self.readdata.split()[3].lower() == ":%s%s" % (self.cmd_operator, listen_item).lower():
                             # If it has arguments
                             if len(self.readdata.split()) > 4:
                                 # If All or Nickname, the command is another place than other cases
@@ -450,7 +425,7 @@ class IrcBot(threading.Thread):
                 if " 332 %s " % self.nickname in self.readdata:
                     self.readtopic()
             except socket.timeout:
-                if profiling: print("Lost Connection (socket timeout). Reconnecting...")
+                if PROFILING: print("Lost Connection (socket timeout). Reconnecting...")
                 self.disconnect("socket.timeout")
                 break
             except (KeyboardInterrupt, SystemExit):
@@ -469,7 +444,7 @@ class IrcBot(threading.Thread):
     
     def composemessage(self, msg,*text):
         """Here we put together the message that is to be sent."""
-        if profiling: print("Starting composemessage !")
+        if PROFILING: print("Starting composemessage !")
         # Sort message
         self.msg = msg
         self.textdata = " ".join(text)
@@ -481,12 +456,12 @@ class IrcBot(threading.Thread):
     
     def sendmessage(self):
         """Simply sending the message (usually from self.composemessage() )"""
-        if profiling: print("Starting sendmessage !")
+        if PROFILING: print("Starting sendmessage !")
         self.sock.send("%s %s :%s\r\n" % (self.reply_type, self.recipient, self.msg))
     
     def executecommand(self, command,*args):
         """Here we execute the various commands that is looked for in self.listen(). It automagically registers new commands in BotCommands class."""
-        if profiling: print("Starting executecommand !")
+        if PROFILING: print("Starting executecommand !")
         # Create list of commands sorted alphabetically
         command_list = []
         command_list_ignores = ["daemon", "getName", "ident", "is_alive", "isAlive", "isDaemon",
@@ -517,7 +492,7 @@ class IrcBot(threading.Thread):
             botadmins.logout(self.sender_nickname) 
         else:
             # Because all methods in BotCommands are lowercase
-            command = lower(command)
+            command = command.lower()
             if botadmins.check_loggedin(self.sender_nickname) or command in self.public_commands:
                 if command in command_list:
                     # Initial arguments to be supplied
@@ -631,175 +606,9 @@ class BotCommands(threading.Thread):
     
     def deleteitem(self, sock, recipient, reply_type, table, id):
         """Usage: deleteitem <table> <id>"""
-        table = lower(table)
+        table = table.lower()
         BotDatabase().database_deleteitem(sock, recipient, reply_type, table, id)
     
-
-
-
-
-class BotUpdate(threading.Thread):
-    """Here resides the methods to update the bot, or check if an older bot
-    exists, and remove it if so.
-    """
-    
-    
-    def __init__(self):
-        """Sets the environment variables and others."""
-        self.deployment = bot_deployment
-        if sys.platform.startswith('win32'):
-            self.slash = "\\"
-        else:
-            self.slash = "/"
-        if self.deployment == ".app":
-            self.current_location = self.slash.join(sys.path[0].split(self.slash)[:-2])
-            self.resources = sys.path[0]
-            self.base_location = self.slash.join(sys.path[0].split(self.slash)[:-3])
-        else:
-            self.current_location = sys.path[0]
-            self.resources = sys.path[0]
-            self.base_location = sys.path[0]
-        self.cur_pid = os.getpid()
-        self.sqldatabase = self.resources + self.slash + sqldatabase
-        self.sqldump = self.base_location + self.slash + "temp_dump.sql"
-        
-    def setupdatabase(self):
-        """Sets up the initial database to be used for the bots information."""
-        sqlcon = sqlite3.connect(self.sqldatabase)
-        sqlcursor = sqlcon.cursor()
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS information (id INTEGER PRIMARY KEY, version VARCHAR(250), old_filepath VARCHAR(250), old_pid VARCHAR(250), deleted VARCHAR(250), db_imported VARCHAR(250))')
-        # If no entries, then create first entry in database
-        sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM information LIMIT 1)')
-        if sqlcursor.fetchone()[0] == 0:
-            insertquery = [str(bot_version), str(self.current_location), str(self.cur_pid), "NO", "NO"]
-            sqlcursor.execute('INSERT INTO information VALUES (null,?,?,?,?,?)', insertquery)
-            sqlcon.commit()
-        sqlcursor.close()
-        sqlcon.close()
-    
-    def exportdatabase(self):
-        """Exports the SQLite database to an external file."""
-        # Export the SQLite DB
-        if profiling: print("Exporting the SQL to %s" % self.sqldump)
-        sqlcon = sqlite3.connect(self.sqldatabase)
-        with open(self.sqldump, 'w') as f:
-            for line in sqlcon.iterdump():
-                f.write('%s\n' % line)
-        sqlcon.close()
-        
-    def importdatabase(self):
-        """Imports an external file into the SQLite database"""
-        # Make sure content is erased in file before trying to import
-        open(self.sqldatabase, 'w').close()
-        # Import the SQLite DB
-        sqlcon = sqlite3.connect(self.sqldatabase)
-        f = open(self.dumpsql,'r')
-        sql = f.read()
-        sqlcon.executescript(sql)
-        sqlcon.commit()
-        sqlcursor.close()
-        sqlcon.close()
-        if profiling: print("Imported the SQL from %s" % self.dumpsql)
-        os.remove(sys.path[0] + self.slash + self.dumpsql)
-        if profiling: print("Removed the temporary dump: %s" % self.dumpsql)
-            
-    def checkforoldbot(self):
-        """Checks to see if an old bot is present (and removes it) and imports the database if it hasn't been done."""
-        # Check if the old DB has been imported or not
-        if os.path.isfile(sys.path[0] + self.slash + self.sqldump):
-            if profiling: print("Importing Database")
-            self.importdatabase()
-            sqlcon = sqlite3.connect(self.sqldatabase)
-            sqlcursor = sqlcon.cursor()
-            updatequery = [str("YES")]
-            sqlcursor.execute('UPDATE information SET db_imported=?', updatequery)
-            sqlcon.commit()
-            db_imported = "YES"
-            if db_imported == "YES":
-                # Get variables
-                sqlcursor.execute('SELECT * FROM information')
-                db_imported = sqlcursor.fetchone()[5]
-                sqlcursor.execute('SELECT * FROM information')
-                deleted = sqlcursor.fetchone()[4]
-                sqlcursor.execute('SELECT * FROM information')
-                old_filepath = sqlcursor.fetchone()[2]
-                sqlcursor.execute('SELECT * FROM information')
-                old_id = sqlcursor.fetchone()[3]
-                # Check if old program is deleted
-                if deleted == "NO":
-                    if profiling: print("Killing old application !")
-                    # Kill the program
-                    os.kill(int(old_id), signal.SIGHUP)
-                    # Delete the old file
-                    if profiling: print("Deleting old application at: " + old_filepath)
-                    os.remove(old_filepath)
-                    # Update DB to reflect changes
-                    updatequery = [str(bot_version), str("YES")]
-                    sqlcursor.execute('UPDATE information SET version=?,deleted=?', updatequery)
-                    sqlcon.commit()
-            sqlcursor.close()
-            sqlcon.close()
-            if profiling: print("Application updated successfully !")
-        else:
-            self.setupdatabase()
-            
-    def updatebot(self, sock, recipient, reply_type, new_version, url):
-        """Checks to see if the bot needs to be updated, and does so if needed."""
-        #Make DB connection
-        sqlcon = sqlite3.connect(self.sqldatabase)
-        sqlcursor = sqlcon.cursor()
-        sqlcursor.execute('SELECT * FROM information')
-        # Check if NEW_VERSION is newer
-        if new_version > bot_version:
-            if profiling: print("Updating !")
-            # Download new version
-            while 1:
-                try:
-                    f = urllib.request.urlopen(urllib.request.Request(url))
-                    link_working = True
-                    if profiling: print("Link is working")
-                    break
-                except:
-                    link_working = False
-                    if profiling: print("Link is not working !")
-                    break
-            if link_working:
-                if profiling: print("Downloading file")
-                new_file_path = self.base_location + self.slash + url.split("/")[-1:][0]
-                urllib.request.urlretrieve (url, new_file_path)
-                # Unzip file
-                while zipfile.is_zipfile(new_file_path):
-                        try:
-                            if profiling: print("Unzipping file...")
-                            zippedfile = zipfile.ZipFile(new_file_path)
-                            if self.deployment == ".app":
-                                # Remove trailing / (.app is a folder)
-                                new_file = self.base_location + self.slash + zippedfile.namelist()[0][:-1]
-                            else:
-                                new_file =  self.base_location + self.slash + zippedfile.namelist()[0]
-                            zippedfile.extractall(BASE_LOCATION)
-                            break
-                        except OSError:
-                            if profiling: print("File already unzipped")
-                            break
-                # Update DB, and put info about current program
-                updatequery = [str(self.current_location), str(self.cur_pid), str("NO")]
-                sqlcursor.execute('UPDATE information SET old_filepath=?,old_pid=?,deleted=?', updatequery)
-                sqlcon.commit()
-                # Export the SQL DB
-                if profiling: print("Exporting Database")
-                exportsqlitedb(irc, SPEC_CHAN)
-                # Start program
-                if profiling: print("Starting Program")
-                if self.deployment == ".py":
-                    os.system("python %s" % new_file)
-                else:
-                    os.system("open %s" % new_file)
-        else:
-            if profiling: print("Already updated !")   
-        # Close the DB connection
-        sqlcursor.close()
-        sqlcon.close()
 
 
 
@@ -1044,7 +853,7 @@ class BotDatabase(threading.Thread):
 if __name__=="__main__":
     # Create database
     BotDatabase().setupdatabase()
-    BotUpdate().setupdatabase()
+    BotUpdate(BOT_DEPLOYMENT, BOT_VERSION, sqldatabase).setupdatabase()
     # Builds the admin and loggedin dictionaries
     botadmins = BotAdmins()
     botadmins.build_admins()
