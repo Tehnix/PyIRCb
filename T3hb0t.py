@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+from __future__ import division
 from optparse import *
 import threading
 import socket
@@ -8,11 +10,10 @@ import time
 import random
 from hashlib import sha224
 from inspect import *
-# BotCommands
-import os
+from string import lower
 import sys
 import platform
-import sqlite3
+import os
 
 from updater import *
 
@@ -27,11 +28,11 @@ parser_desc = """
 |       //////                    .  //////   //////      //////    .        |
 |   .  //////            //////////////////  //////   .  //////             .|
 |     //////    .       /////////////////   //////      //////   b0t         |
-| .         .       .   Puppynix & Optical & Speakeasy     .     .     .     |
+| .         .       .         . Zeal Development     .     .     .     .     |
 |----------------------------------------------------------------------------|
 |                    T3hb0t - A Python based IRC bot                         |
 |----------------------------------------------------------------------------|  
-|Author: Puppynix,  (Optical and speakeasy)                                  |
+|Author: Chrules at Zeal                                                     |
 |Info: T3hb0t is an IRC bot client capable of connecting to multiple servers |
 |and channels. Easily customized and easy to add commands.                   | 
 |                                                                            |
@@ -61,7 +62,7 @@ parser.add_option("-o", "--operator", dest="cmd_op", action="store", nargs=1,
 parser.add_option("-d", "--del", dest="del_id", action="store", nargs=1,
                   help="Deletes setting with id. Usage: -d <id>")
 parser.add_option("-a", "--admin", dest="add_admin", action="store", nargs=2,
-                  help="Adds admin to database. Usage: -a <username> <password>")           
+                  help="Adds admin to database. Usage: -a <username> <password>")
 parser.add_option("-u", "--use", dest="use", action="store", nargs=4,
                   help="Starts bot with specified settings. Usage: -u <nick> <host> <port> <channels>")
 parser.add_option("-s", "--set", dest="set", action="store", nargs=5,
@@ -70,7 +71,7 @@ parser.add_option("-s", "--set", dest="set", action="store", nargs=5,
 (options, args) = parser.parse_args()
 
 # Bot version number
-BOT_VERSION = "1.0.1"
+BOT_VERSION = "1.0.0"
 # Bot deployment details
 BOT_DEPLOYMENT = ".py"
 # For debugging
@@ -105,7 +106,7 @@ class BotOptparse(threading.Thread):
                 pass
     
     def admin(self):
-        print("\n\nAdding admin %s" % options.add_admin[0])
+        print "\n\nAdding admin %s" % options.add_admin[0]
         botadmins.add_admin(options.add_admin[0], options.add_admin[1])
     
     def run(self):
@@ -113,7 +114,7 @@ class BotOptparse(threading.Thread):
         sqlcursor = sqlcon.cursor()
         sqlcursor.execute('SELECT * FROM settings')
         for row in sqlcursor:
-            if PROFILING: print("\n\nStarting thread with id: %s" % row[0])
+            if PROFILING: print "\n\nStarting thread with id: %s" % row[0]
             ircbot = IrcBot(row[2], int(row[3]), row[1], row[1], row[1], row[4].split())
             thread = threading.Thread(target=ircbot.connect)
             thread.start()
@@ -121,8 +122,8 @@ class BotOptparse(threading.Thread):
     def use(self):
         # Check for valid port
         if options.use[2] != "6667" and options.use[2] != "6697":
-            print("\n\nNote that the port is %s and not 6667 or 6697 !\n\n" % options.use[2])
-        if PROFILING: print("\n\nStarting script with -u !")
+            print "\n\nNote that the port is %s and not 6667 or 6697 !\n\n" % options.use[2]
+        if PROFILING: print "\n\nStarting script with -u !"
         ircbot = IrcBot(options.use[1], int(options.use[2]), options.use[0], options.use[0], options.use[0], options.use[3].split())
         thread = threading.Thread(target=ircbot.connect)
         thread.start()
@@ -133,7 +134,7 @@ class BotOptparse(threading.Thread):
         search_query = [options.just]
         sqlcursor.execute('SELECT * FROM settings WHERE id=?', search_query)
         for row in sqlcursor:
-            if PROFILING: print("\n\nStarting thread with id: %s" % row[0])
+            if PROFILING: print "\n\nStarting thread with id: %s" % row[0]
             ircbot = IrcBot(row[2], int(row[3]), row[1], row[1], row[1], row[4].split())
             thread = threading.Thread(target=ircbot.connect)
             thread.start()
@@ -146,7 +147,7 @@ class BotOptparse(threading.Thread):
     
     def set(self):
         if options.set[3] != "6667" and options.set[3] != "6697":
-            print("\n\nNote that the port is %s and not 6667 or 6697 !\n\n" % options.set[3])
+            print "\n\nNote that the port is %s and not 6667 or 6697 !\n\n" % options.set[3]
         BotDatabase().set_db(options.set[0], options.set[1], options.set[2], options.set[3], options.set[4])
     
     def clear(self):
@@ -227,12 +228,12 @@ class BotAdmins(threading.Thread):
             insertquery = [username, password]
             self.sqlcursor.execute('INSERT INTO admins VALUES (null,?,?)', insertquery)
             self.sqlcon.commit()
-            print("\nAdmin has been added\n\n")
+            print "\nAdmin has been added\n\n"
         else:
             updatequery = [username, password, username]
             self.sqlcursor.execute('UPDATE admins SET username=?, password=? WHERE username=?', updatequery)
             self.sqlcon.commit()
-            print("\nAdmin %s has been updated !\n\n" % username)
+            print "\nAdmin %s has been updated !\n\n" % username
     
 
 
@@ -247,7 +248,7 @@ class IrcBot(threading.Thread):
         """Defines initial values and ties them to the class"""
         # Set the command operator prefix
         if options.cmd_op:
-            print("Operator prefix set to: %s" % options.cmd_op)
+            print "Operator prefix set to: %s" % options.cmd_op
             self.cmd_operator = options.cmd_op
         else:
             self.cmd_operator = "!"
@@ -294,7 +295,7 @@ class IrcBot(threading.Thread):
                                 "getrequests"]
         # Set if bot will identify
         if options.identify:
-            print("The bot will try to identify with password %s !" % options.identify)
+            print "The bot will try to identify with password %s !" % options.identify
             self.bot_identify = True
             self.bot_password = options.identify
         else:
@@ -305,11 +306,12 @@ class IrcBot(threading.Thread):
     
     def connect(self):
         """Tries to connect to the server. Retries if fails, otherwise, just moves onto self.join()"""
-        if PROFILING: print("Starting connect !")
+        if PROFILING: print "Starting connect !"
         while True:
+            # Regular connection
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if options.ssl:
-                if PROFILING: print("Wrapping socket in SSL !")
+                if PROFILING: print "Wrapping socket in SSL !"
                 self.sock = ssl.wrap_socket(self.sock)
             # This allows the socket address to be reused and sets the timeout value
             # so we know if we lost the connection.
@@ -318,11 +320,11 @@ class IrcBot(threading.Thread):
             try:
                 self.sock.connect((self.hostname, self.port))
             except socket.gaierror:
-                if PROFILING: print("Either wrong hostname or no connection. Trying again...")
+                if PROFILING: print "Either wrong hostname or no connection. Trying again..."
                 time.sleep(10)
                 continue
             except ssl.SSLError:
-                if PROFILING: print("Problem has occured with SSL connecting to %s:%s ! (check you're using the right port)" % (self.hostname, self.port,))
+                if PROFILING: print "Problem has occured with SSL connecting to %s:%s ! (check you're using the right port)" % (self.hostname, self.port,)
                 break
             else:
                 self.join()
@@ -331,12 +333,12 @@ class IrcBot(threading.Thread):
         """Disconnects handled here for the various ways we might loose or drop the connection."""
         # If we get disconnected from the server
         if reason == 0:
-            if PROFILING: print("Disconnected from server !")
+            if PROFILING: print "Disconnected from server !"
             self.sock.close()
             self.connect()
         # If the socket times out
         elif reason == "socket.timeout" or reason == "socket.error":
-            if PROFILING: print("Lost Connection (socket.timeout/socket.error). Reconnecting...")
+            if PROFILING: print "Lost Connection (socket.timeout/socket.error). Reconnecting..."
             self.connect()
         elif reason == "PART" or reason == "QUIT":
             self.sock.send("%s\r\n" % reason)
@@ -347,7 +349,7 @@ class IrcBot(threading.Thread):
     
     def join(self):
         """Here we set the nickname and userinfo, and joins the channels. Upon succes self.listen() is started."""
-        if PROFILING: print("Starting join !")
+        if PROFILING: print "Starting join !"
         # Send nickname and userinfo to the server
         self.sock.send("NICK %s\r\n" % self.nickname)
         self.sock.send("USER %s %s +iw :%s\r\n" % (self.idents, self.hostname, self.realname))
@@ -359,21 +361,21 @@ class IrcBot(threading.Thread):
         while True:
             try:
                 self.readdata = self.sock.recv(4096)
-                if PROFILING: print(self.readdata)
+                if PROFILING: print self.readdata
                 self.disconnect(self.readdata)
                 # PING PONG, so we don't get disconnected
                 if self.readdata[0:4] == "PING":
                     self.sock.send("PONG  %s\r\n" % self.readdata.split()[1])
                 # If nickname already in use, restart the process with a new nickname
                 if "%s :Nickname is already in use" % self.nickname in self.readdata:
-                    if PROFILING: print("Nickname already in use. Changing nick and reconnecting...")
+                    if PROFILING: print "Nickname already in use. Changing nick and reconnecting..."
                     self.nickname = self.nickname + str(time.time())[5:-3]
                     self.sock.close()
                     self.connect()
                     break
                 # Some servers request CTCP before we can connect to channels
                 if "\x01VERSION\x01" in self.readdata:
-                    if PROFILING: print("CTCP request, waiting and joining channels !")
+                    if PROFILING: print "CTCP request, waiting and joining channels !"
                     time.sleep(2)
                     for channel in self.channels:
                         self.sock.send("JOIN :%s\r\n" % channel)
@@ -392,10 +394,10 @@ class IrcBot(threading.Thread):
     
     def listen(self):
         """This is were we define what commands or other things we need to look for."""             
-        if PROFILING: print("Starting listen !")
+        if PROFILING: print "Starting listen !"
         while True:
             self.readdata = self.sock.recv(4096)
-            if PROFILING: print(self.readdata)
+            if PROFILING: print self.readdata
             self.disconnect(self.readdata)
             self.sender_nickname = self.readdata.split("!")[0][1:]
             try:
@@ -403,7 +405,7 @@ class IrcBot(threading.Thread):
                 if len(self.readdata.split()) > 3:
                     for listen_item in self.listen_to_list:
                         # If the item matches
-                        if self.readdata.split()[3].lower() == ":%s%s" % (self.cmd_operator, listen_item).lower():
+                        if lower(self.readdata.split()[3]) == lower(":%s%s" % (self.cmd_operator, listen_item)):
                             # If it has arguments
                             if len(self.readdata.split()) > 4:
                                 # If All or Nickname, the command is another place than other cases
@@ -425,7 +427,7 @@ class IrcBot(threading.Thread):
                 if " 332 %s " % self.nickname in self.readdata:
                     self.readtopic()
             except socket.timeout:
-                if PROFILING: print("Lost Connection (socket timeout). Reconnecting...")
+                if PROFILING: print "Lost Connection (socket timeout). Reconnecting..."
                 self.disconnect("socket.timeout")
                 break
             except (KeyboardInterrupt, SystemExit):
@@ -444,7 +446,7 @@ class IrcBot(threading.Thread):
     
     def composemessage(self, msg,*text):
         """Here we put together the message that is to be sent."""
-        if PROFILING: print("Starting composemessage !")
+        if PROFILING: print "Starting composemessage !"
         # Sort message
         self.msg = msg
         self.textdata = " ".join(text)
@@ -456,12 +458,12 @@ class IrcBot(threading.Thread):
     
     def sendmessage(self):
         """Simply sending the message (usually from self.composemessage() )"""
-        if PROFILING: print("Starting sendmessage !")
+        if PROFILING: print "Starting sendmessage !"
         self.sock.send("%s %s :%s\r\n" % (self.reply_type, self.recipient, self.msg))
     
     def executecommand(self, command,*args):
         """Here we execute the various commands that is looked for in self.listen(). It automagically registers new commands in BotCommands class."""
-        if PROFILING: print("Starting executecommand !")
+        if PROFILING: print "Starting executecommand !"
         # Create list of commands sorted alphabetically
         command_list = []
         command_list_ignores = ["daemon", "getName", "ident", "is_alive", "isAlive", "isDaemon",
@@ -474,7 +476,7 @@ class IrcBot(threading.Thread):
         command_list.sort(key=lambda x: x.lower())
         if command == "Commands":
             for cmd in command_list:
-                print(command_list)
+                print command_list
                 text = "%s : %s" % (str(cmd), cleandoc(getdoc(getattr(BotCommands, cmd))))
                 self.composemessage(text, self.readdata)
                 # So we don't flood
@@ -492,7 +494,7 @@ class IrcBot(threading.Thread):
             botadmins.logout(self.sender_nickname) 
         else:
             # Because all methods in BotCommands are lowercase
-            command = command.lower()
+            command = lower(command)
             if botadmins.check_loggedin(self.sender_nickname) or command in self.public_commands:
                 if command in command_list:
                     # Initial arguments to be supplied
@@ -606,7 +608,7 @@ class BotCommands(threading.Thread):
     
     def deleteitem(self, sock, recipient, reply_type, table, id):
         """Usage: deleteitem <table> <id>"""
-        table = table.lower()
+        table = lower(table)
         BotDatabase().database_deleteitem(sock, recipient, reply_type, table, id)
     
 
@@ -638,21 +640,21 @@ class BotDatabase(threading.Thread):
     def get_db(self,*hilight):
         self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings)')
         if self.sqlcursor.fetchone()[0] == 0:
-            print("\n\nNo settings has been saved yet !\n\n")
+            print "\n\nNo settings has been saved yet !\n\n"
         else:
-            print("\n\n")
-            print("     ,----,,----------------------,,---------------------------,,----------,,---------------------------------------,")
-            print("     | id ||       Nickname       ||          Hostname         ||   port   ||              channels                 |")
-            print("     '----''----------------------''---------------------------''----------''---------------------------------------'")
+            print "\n\n"
+            print "     ,----,,----------------------,,---------------------------,,----------,,---------------------------------------,"
+            print "     | id ||       Nickname       ||          Hostname         ||   port   ||              channels                 |"
+            print "     '----''----------------------''---------------------------''----------''---------------------------------------'"
             self.sqlcursor.execute('SELECT * FROM settings')
             for row in self.sqlcursor:
                 x = "     "
                 if hilight:
                     if row[0] == hilight[0]:
                         x = "---> "
-                print(x+"| %s ||    %s    ||      %s     ||  %s  ||         %s          |" % (row[0].center(2), row[1].center(14), row[2].center(16), row[3].center(6), row[4].center(20),))
-                print("     '----''----------------------''---------------------------''----------''---------------------------------------'")
-            print("\n\n")
+                print x+"| %s ||    %s    ||      %s     ||  %s  ||         %s          |" % (row[0].center(2), row[1].center(14), row[2].center(16), row[3].center(6), row[4].center(20),)
+                print "     '----''----------------------''---------------------------''----------''---------------------------------------'"
+            print "\n\n"
         self.sqlcursor.close()
         self.sqlcon.close()
     
@@ -663,18 +665,18 @@ class BotDatabase(threading.Thread):
             insertquery = [db_id, nickname, hostname, port, channels]
             self.sqlcursor.execute('INSERT INTO settings VALUES (?,?,?,?,?)', insertquery)
             self.sqlcon.commit()
-            print("\n\nSetting has been added.")
+            print "\n\nSetting has been added."
             self.get_db(db_id)
         else:
             updatequery = [nickname, hostname, port, channels, db_id]
             self.sqlcursor.execute('UPDATE settings SET nickname=?, hostname=?, port=?, channels=? WHERE id=?', updatequery)
             self.sqlcon.commit()
-            print("\n\nSetting has been updated !")
+            print "\n\nSetting has been updated !"
             self.get_db(db_id)
     
     def clear_db(self):
         self.sqlcursor.execute('TRUNCATE TABLE settings')
-        print("\n\nCleared database !\n\n")
+        print "\n\nCleared database !\n\n"
         self.sqlcon.commit()
         self.sqlcursor.close()
         self.sqlcon.close()
@@ -683,12 +685,12 @@ class BotDatabase(threading.Thread):
         search_query = [db_id]
         self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings WHERE id=?)', search_query)
         if self.sqlcursor.fetchone()[0] == 0:
-            print("\n\nNo setting with id: %s !\n\n" % db_id)
+            print "\n\nNo setting with id: %s !\n\n" % db_id
         else:
             delete_query = [db_id]
             self.sqlcursor.execute('DELETE FROM settings WHERE id=?', delete_query)
             self.sqlcon.commit()
-            print("\n\nDeleted setting with id %s.\n\n" % db_id)
+            print "\n\nDeleted setting with id %s.\n\n" % db_id
         self.sqlcursor.close()
         self.sqlcon.close()
     
@@ -853,7 +855,8 @@ class BotDatabase(threading.Thread):
 if __name__=="__main__":
     # Create database
     BotDatabase().setupdatabase()
-    BotUpdate(BOT_DEPLOYMENT, BOT_VERSION, sqldatabase).setupdatabase()
+    botupdate = BotUpdate(BOT_DEPLOYMENT, BOT_VERSION, sqldatabase)
+    botupdate.setupdatabase()
     # Builds the admin and loggedin dictionaries
     botadmins = BotAdmins()
     botadmins.build_admins()

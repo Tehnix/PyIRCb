@@ -3,11 +3,12 @@
 import threading
 import os
 import sys
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
+import urllib
+import urllib2
 import sqlite3
 import signal
 import zipfile
+
 
 
 class BotUpdate(threading.Thread):
@@ -44,7 +45,7 @@ class BotUpdate(threading.Thread):
         # If no entries, then create first entry in database
         sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM information LIMIT 1)')
         if sqlcursor.fetchone()[0] == 0:
-            insertquery = [str(self.version), str(self.current_location), str(self.cur_pid), "NO", "NO"]
+            insertquery = [str(BOT_VERSION), str(self.current_location), str(self.cur_pid), "NO", "NO"]
             sqlcursor.execute('INSERT INTO information VALUES (null,?,?,?,?,?)', insertquery)
             sqlcon.commit()
         sqlcursor.close()
@@ -53,7 +54,7 @@ class BotUpdate(threading.Thread):
     def exportdatabase(self):
         """Exports the SQLite database to an external file."""
         # Export the SQLite DB
-        if PROFILING: print("Exporting the SQL to %s" % self.sqldump)
+        if PROFILING: print "Exporting the SQL to %s" % self.sqldump
         sqlcon = sqlite3.connect(self.sqldatabase)
         with open(self.sqldump, 'w') as f:
             for line in sqlcon.iterdump():
@@ -72,15 +73,15 @@ class BotUpdate(threading.Thread):
         sqlcon.commit()
         sqlcursor.close()
         sqlcon.close()
-        if PROFILING: print("Imported the SQL from %s" % self.dumpsql)
+        if PROFILING: print "Imported the SQL from %s" % self.dumpsql
         os.remove(sys.path[0] + self.slash + self.dumpsql)
-        if PROFILING: print("Removed the temporary dump: %s" % self.dumpsql)
+        if PROFILING: print "Removed the temporary dump: %s" % self.dumpsql
             
     def checkforoldbot(self):
         """Checks to see if an old bot is present (and removes it) and imports the database if it hasn't been done."""
         # Check if the old DB has been imported or not
         if os.path.isfile(sys.path[0] + self.slash + self.sqldump):
-            if PROFILING: print("Importing Database")
+            if PROFILING: print "Importing Database"
             self.importdatabase()
             sqlcon = sqlite3.connect(self.sqldatabase)
             sqlcursor = sqlcon.cursor()
@@ -100,50 +101,50 @@ class BotUpdate(threading.Thread):
                 old_id = sqlcursor.fetchone()[3]
                 # Check if old program is deleted
                 if deleted == "NO":
-                    if PROFILING: print("Killing old application !")
+                    if PROFILING: print "Killing old application !"
                     # Kill the program
                     os.kill(int(old_id), signal.SIGHUP)
                     # Delete the old file
-                    if PROFILING: print("Deleting old application at: " + old_filepath)
+                    if PROFILING: print "Deleting old application at: " + old_filepath
                     os.remove(old_filepath)
                     # Update DB to reflect changes
-                    updatequery = [str(self.version), str("YES")]
+                    updatequery = [str(BOT_VERSION), str("YES")]
                     sqlcursor.execute('UPDATE information SET version=?,deleted=?', updatequery)
                     sqlcon.commit()
             sqlcursor.close()
             sqlcon.close()
-            if PROFILING: print("Application updated successfully !")
+            if PROFILING: print "Application updated successfully !"
         else:
             self.setupdatabase()
             
     def updatebot(self, sock, recipient, reply_type, new_version, url):
         """Checks to see if the bot needs to be updated, and does so if needed."""
-        # Make DB connection
+        #Make DB connection
         sqlcon = sqlite3.connect(self.sqldatabase)
         sqlcursor = sqlcon.cursor()
         sqlcursor.execute('SELECT * FROM information')
         # Check if NEW_VERSION is newer
-        if new_version > self.version:
-            if PROFILING: print("Updating !")
+        if new_version > BOT_VERSION:
+            if PROFILING: print "Updating !"
             # Download new version
             while 1:
                 try:
-                    f = urllib.request.urlopen(urllib.request.Request(url))
+                    f = urllib2.urlopen(urllib2.Request(url))
                     link_working = True
-                    if PROFILING: print("Link is working")
+                    if PROFILING: print "Link is working"
                     break
                 except:
                     link_working = False
-                    if PROFILING: print("Link is not working !")
+                    if PROFILING: print "Link is not working !"
                     break
             if link_working:
-                if PROFILING: print("Downloading file")
+                if PROFILING: print "Downloading file"
                 new_file_path = self.base_location + self.slash + url.split("/")[-1:][0]
-                urllib.request.urlretrieve (url, new_file_path)
+                urllib.urlretrieve (url, new_file_path)
                 # Unzip file
                 while zipfile.is_zipfile(new_file_path):
                         try:
-                            if PROFILING: print("Unzipping file...")
+                            if PROFILING: print "Unzipping file..."
                             zippedfile = zipfile.ZipFile(new_file_path)
                             if self.deployment == ".app":
                                 # Remove trailing / (.app is a folder)
@@ -153,23 +154,25 @@ class BotUpdate(threading.Thread):
                             zippedfile.extractall(BASE_LOCATION)
                             break
                         except OSError:
-                            if PROFILING: print("File already unzipped")
+                            if PROFILING: print "File already unzipped"
                             break
                 # Update DB, and put info about current program
                 updatequery = [str(self.current_location), str(self.cur_pid), str("NO")]
                 sqlcursor.execute('UPDATE information SET old_filepath=?,old_pid=?,deleted=?', updatequery)
                 sqlcon.commit()
                 # Export the SQL DB
-                if PROFILING: print("Exporting Database")
+                if PROFILING: print "Exporting Database"
                 exportsqlitedb(irc, SPEC_CHAN)
                 # Start program
-                if PROFILING: print("Starting Program")
+                if PROFILING: print "Starting Program"
                 if self.deployment == ".py":
                     os.system("python %s" % new_file)
                 else:
                     os.system("open %s" % new_file)
         else:
-            if PROFILING: print("Already updated !")   
+            if PROFILING: print "Already updated !"   
         # Close the DB connection
         sqlcursor.close()
         sqlcon.close()
+
+
