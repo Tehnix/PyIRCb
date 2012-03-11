@@ -7,7 +7,6 @@ import threading
 import socket
 import ssl
 import time
-import random
 from hashlib import sha224
 from inspect import *
 from string import lower
@@ -16,13 +15,16 @@ import platform
 import os
 
 from updater import *
+from databaselayer import database
+from usersystem import users
+from commands import *
 
 parser_desc = """
 ,----------------------------------------------------------------------------,
 | .            .                    .      .           .        .            |
 |     ///////////////////// .////////////////   .  //////               .    |
-|    /////////////////////  //////////////////    //////      .     .        |  
-|    .     //////   .        .         //////    //////                      |   
+|    /////////////////////  //////////////////    //////      .     .        |
+|    .     //////   .        .         //////    //////                      |
 | .       //////        .      //////////////   //////////////////       .   |
 |        //////   .          ///////////////   //////////////////            |
 |       //////                    .  //////   //////      //////    .        |
@@ -31,10 +33,10 @@ parser_desc = """
 | .         .       .         . Zeal Development     .     .     .     .     |
 |----------------------------------------------------------------------------|
 |                    T3hb0t - A Python based IRC bot                         |
-|----------------------------------------------------------------------------|  
+|----------------------------------------------------------------------------|
 |Author: Chrules at Zeal                                                     |
 |Info: T3hb0t is an IRC bot client capable of connecting to multiple servers |
-|and channels. Easily customized and easy to add commands.                   | 
+|and channels. Easily customized and easy to add commands.                   |
 |                                                                            |
 |Default operator prefix is ! . Can be set with -o option. If using -i <pass>|
 |to identify, the nick must be registered beforehand (some servers require   |
@@ -58,7 +60,7 @@ parser.add_option("-l", "--ssl", dest="ssl", default=False, action="store_true",
 parser.add_option("-j", "--just", dest="just", action="store", nargs=1,
                   help="Connect just to server with id. Usage: -j <id>")
 parser.add_option("-o", "--operator", dest="cmd_op", action="store", nargs=1,
-                  help="Sets operator sign to be used as prefix to commands. Usage: -o <operator>")                  
+                  help="Sets operator sign to be used as prefix to commands. Usage: -o <operator>")
 parser.add_option("-d", "--del", dest="del_id", action="store", nargs=1,
                   help="Deletes setting with id. Usage: -d <id>")
 parser.add_option("-a", "--admin", dest="add_admin", action="store", nargs=2,
@@ -154,87 +156,6 @@ class BotOptparse(threading.Thread):
         BotDatabase().clear_db()
     
 
-
-
-
-class BotAdmins(threading.Thread):
-    """Creates and manages the admins, plus the loggedin dictionary."""
-    
-    def __init__(self):
-        self.sqldatabase = sqldatabase
-        # Predefined admins. The key is the username and the
-        # value is a sha224 of the password
-        self.admins = {"AdminName":"90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809"}
-        self.master_admins = {}
-        for admin in self.admins:
-            self.master_admins[admin] = self.admins[admin]
-    
-    def build_admins(self):
-        self.sqlcon = sqlite3.connect(self.sqldatabase)
-        self.sqlcursor = self.sqlcon.cursor()
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings)')
-        self.sqlcursor.execute('SELECT * FROM settings')
-        for row in self.sqlcursor:
-            self.admins[row[1]] = row[2]
-        self.sqlcursor.close()
-        self.sqlcon.close()
-        # Build the loggedin dict
-        self.build_loggedin()
-    
-    def build_loggedin(self):
-        self.loggedin = {}
-        for admin in self.admins:
-            self.loggedin[admin] = 0
-    
-    def check_loggedin(self, username):
-        """Check if user is logged in or not."""
-        try:
-            if self.loggedin[username] == 1:
-                return True
-        except KeyError:
-            return False
-    
-    def login(self, sock, recipient, reply_type, username,*text):
-        self.readdata = text[0]
-        """If the user want's to login or to check if already loggedin."""
-        # See if the nickname is in the admins dict
-        if username in self.admins:
-            if len(self.readdata.split()) > 4:
-                for admin in self.admins:
-                    # Check if password matches the admin
-                    if admin == username:
-                        if sha224(self.readdata.split()[4]).hexdigest() == self.admins[admin]:
-                            # Set login value in loggedin dict
-                            self.loggedin[admin] = 1
-                            sock.send("%s %s :You are now logged in !\r\n" % (reply_type, recipient))
-                        else:
-                            sock.send("%s %s :Login failed !\r\n" % (reply_type, recipient))
-    
-    def logout(self, username):
-        """Logs out the user."""
-        # If nickname was an admin, makes sure log out is done
-        try:
-            self.loggedin[username] = 0
-        except KeyError:
-            pass
-    
-    def add_admin(self, username, password):
-        self.sqlcon = sqlite3.connect(self.sqldatabase)
-        self.sqlcursor = self.sqlcon.cursor()
-        password = sha224(password).hexdigest()
-        search_query = [username]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM admins WHERE username=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [username, password]
-            self.sqlcursor.execute('INSERT INTO admins VALUES (null,?,?)', insertquery)
-            self.sqlcon.commit()
-            print "\nAdmin has been added\n\n"
-        else:
-            updatequery = [username, password, username]
-            self.sqlcursor.execute('UPDATE admins SET username=?, password=? WHERE username=?', updatequery)
-            self.sqlcon.commit()
-            print "\nAdmin %s has been updated !\n\n" % username
-    
 
 
 
@@ -487,11 +408,11 @@ class IrcBot(threading.Thread):
         elif command == "Help":
             for item in self.help_list:
                 self.composemessage(item, self.readdata)
-                time.sleep(0.5)   
+                time.sleep(0.5)
         elif command == "Login":
             botadmins.login(self.sock, self.sender_nickname, "NOTICE", self.sender_nickname, self.readdata)
         elif command == "Logout":
-            botadmins.logout(self.sender_nickname) 
+            botadmins.logout(self.sender_nickname)
         else:
             # Because all methods in BotCommands are lowercase
             command = lower(command)
@@ -526,329 +447,6 @@ class IrcBot(threading.Thread):
     
 
 
-
-
-class BotCommands(threading.Thread):
-    """This is were the commands for the bot resides,
-    everything will be handled by threads.
-    """
-    
-    def __init__(self):
-        """Sets initial variables based on environment"""
-        platform.mac_ver() # Fix on Mac OS X, else causes "Trace/BPT trap" error
-        # Set platform
-        self.platforms = sys.platform
-        self.is_windows = self.is_mac = self.is_linux = False
-        # Set variables that depends on OS
-        if self.platforms.startswith("win32"):
-            self.operatingsystem = "Windows"
-            self.os_version = sys.getwindowsversion()[4]
-            self.username = os.getenv('USERNAME')
-            self.is_windows = True
-        elif self.platforms.startswith("darwin"):
-            self.operatingsystem = "Mac OS X"
-            self.os_version = platform.mac_ver()[0]
-            self.username = os.getenv('USER')
-            self.is_mac = True
-        elif self.platforms.startswith("linux"):
-            self.operatingsystem = dist()[0]
-            self.os_version = platform.linux_distribution()[1]
-            self.username = os.getenv('USER')
-            self.is_linux = True
-        # Set machine
-        self.mach = platform.machine()
-    
-    def repeat(self, sock, recipient, reply_type,*text):
-        """Usage: repeat <text>"""
-        if text:
-            send_text = ""
-            for i in range(len(text)):
-                    send_text += text[i]+" "
-        else:
-            send_text = "Sup?"
-        sock.send("%s %s :%s\r\n" % (reply_type, recipient, send_text))
-    
-    def add_admin(self, sock, recipient, reply_type, username, password):
-        """Usage: add_admin <username> <password>"""
-        if recipient in botadmins.master_admins:
-            botadmins.add_admin(username, password)
-            sock.send("%s %s :Admin has been added !\r\n" % (reply_type, recipient))
-    
-    def addbook(self, sock, recipient, reply_type, book_name, book_link):
-        """Usage: addbook <book name> <book link>"""
-        BotDatabase().database_addbook(sock, recipient, reply_type, recipient, book_name, book_link)
-    
-    def addrequest(self, sock, recipient, reply_type, req_name, req_catagory):
-        """Usage: addrequest <request> <request catagory>"""
-        BotDatabase().database_addrequest(sock, recipient, reply_type, recipient, req_name, req_catagory)
-    
-    def addtut(self, sock, recipient, reply_type, tut_name, tut_link):
-        """Usage: addtut <tutorial name> <tutorial link>"""
-        BotDatabase().database_addtut(sock, recipient, reply_type, recipient, tut_name, tut_link)
-    
-    def addtool(self, sock, recipient, reply_type, tool_name, tool_link):
-        """Usage: addtool <tool name> <tool link>"""
-        BotDatabase().database_addtool(sock, recipient, reply_type, recipient, tool_name, tool_link)    
-    
-    def getbooks(self, sock, recipient, reply_type):
-        """Usage: getbooks"""
-        BotDatabase().database_getbooks(sock, recipient, reply_type)
-    
-    def gettuts(self, sock, recipient, reply_type):
-        """Usage: gettuts"""
-        BotDatabase().database_gettuts(sock, recipient, reply_type)
-    
-    def gettools(self, sock, recipient, reply_type):
-        """Usage: gettools"""
-        BotDatabase().database_gettools(sock, recipient, reply_type)
-    
-    def getrequests(self, sock, recipient, reply_type):
-        """Usage: getrequests"""
-        BotDatabase().database_getrequests(sock, recipient, reply_type)
-    
-    def deleteitem(self, sock, recipient, reply_type, table, id):
-        """Usage: deleteitem <table> <id>"""
-        table = lower(table)
-        BotDatabase().database_deleteitem(sock, recipient, reply_type, table, id)
-    
-
-
-
-
-class BotDatabase(threading.Thread):
-    """Handles the database actions of the bot."""
-    
-    def __init__(self):
-        self.sqldatabase = sqldatabase
-        self.sqlcon = sqlite3.connect(self.sqldatabase)
-        self.sqlcursor = self.sqlcon.cursor()
-    
-    def setupdatabase(self):
-        """Sets up the initial database to be used for the bots information."""
-        sqlcon = sqlite3.connect(self.sqldatabase)
-        sqlcursor = sqlcon.cursor()
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS admins (id INTEGER PRIMARY KEY, username VARCHAR(250), password VARCHAR(250))')
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS settings (id VARCHAR(250), nickname VARCHAR(250), hostname VARCHAR(250), port VARCHAR(250), channels VARCHAR(250))')
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS bookcase (id INTEGER PRIMARY KEY, nickname VARCHAR(250), book_name VARCHAR(250), book_link VARCHAR(250))')
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS tutorials (id INTEGER PRIMARY KEY, nickname VARCHAR(250), tut_name VARCHAR(250), tut_link VARCHAR(250))')
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS tools (id INTEGER PRIMARY KEY, nickname VARCHAR(250), tool_name VARCHAR(250), tool_link VARCHAR(250))')
-        sqlcursor.execute('CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY, nickname VARCHAR(250), req_name VARCHAR(250), req_catagory VARCHAR(250))')
-        sqlcon.commit()
-        sqlcursor.close()
-        sqlcon.close()
-    
-    def get_db(self,*hilight):
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings)')
-        if self.sqlcursor.fetchone()[0] == 0:
-            print "\n\nNo settings has been saved yet !\n\n"
-        else:
-            print "\n\n"
-            print "     ,----,,----------------------,,---------------------------,,----------,,---------------------------------------,"
-            print "     | id ||       Nickname       ||          Hostname         ||   port   ||              channels                 |"
-            print "     '----''----------------------''---------------------------''----------''---------------------------------------'"
-            self.sqlcursor.execute('SELECT * FROM settings')
-            for row in self.sqlcursor:
-                x = "     "
-                if hilight:
-                    if row[0] == hilight[0]:
-                        x = "---> "
-                print x+"| %s ||    %s    ||      %s     ||  %s  ||         %s          |" % (row[0].center(2), row[1].center(14), row[2].center(16), row[3].center(6), row[4].center(20),)
-                print "     '----''----------------------''---------------------------''----------''---------------------------------------'"
-            print "\n\n"
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def set_db(self, db_id, nickname, hostname, port, channels):
-        search_query = [db_id]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings WHERE id=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [db_id, nickname, hostname, port, channels]
-            self.sqlcursor.execute('INSERT INTO settings VALUES (?,?,?,?,?)', insertquery)
-            self.sqlcon.commit()
-            print "\n\nSetting has been added."
-            self.get_db(db_id)
-        else:
-            updatequery = [nickname, hostname, port, channels, db_id]
-            self.sqlcursor.execute('UPDATE settings SET nickname=?, hostname=?, port=?, channels=? WHERE id=?', updatequery)
-            self.sqlcon.commit()
-            print "\n\nSetting has been updated !"
-            self.get_db(db_id)
-    
-    def clear_db(self):
-        self.sqlcursor.execute('TRUNCATE TABLE settings')
-        print "\n\nCleared database !\n\n"
-        self.sqlcon.commit()
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def del_id(self, db_id):
-        search_query = [db_id]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM settings WHERE id=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            print "\n\nNo setting with id: %s !\n\n" % db_id
-        else:
-            delete_query = [db_id]
-            self.sqlcursor.execute('DELETE FROM settings WHERE id=?', delete_query)
-            self.sqlcon.commit()
-            print "\n\nDeleted setting with id %s.\n\n" % db_id
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def database_addbook(self, sock, recipient, reply_type, nickname, book_name, book_link):
-        # Check if the tutorial has already been added (to avoid duplicates)
-        search_query = [book_name]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM bookcase WHERE book_name=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [nickname, book_name, book_link]
-            self.sqlcursor.execute('INSERT INTO bookcase VALUES (null,?,?,?)', insertquery)
-            self.sqlcon.commit()
-            send_text = "Book %s has been added under the catagory %s with the link %s" % (book_name, book_link,)
-        else:
-            send_text = "Seems as though this book has already been added"
-        sock.send("%s %s :%s\r\n" % (reply_type, recipient, send_text))
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def database_getbooks(self, sock, recipient, reply_type):
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM bookcase)')
-        if self.sqlcursor.fetchone()[0] == 0:
-            sock.send("%s %s :Nothing here yet !\r\n" % (reply_type, recipient))
-        else:
-            send_text = []
-            # Get list of requests and add them to list object send_text
-            self.sqlcursor.execute('SELECT * FROM bookcase')
-            for row in self.sqlcursor:
-                send_text.append("Book: %s (%s) from %s (id:%s)" % (row[2], row[3], row[1], row[0],))
-            # Now for each item in send_text, send with speed depending on how many there are (avoid flooding).
-            for text in send_text:
-                sock.send("%s %s :%s\r\n" % (reply_type, recipient, text))
-                if 10 < len(send_text):
-                    time.sleep(1)
-                else:
-                    time.sleep(0.5)
-            self.sqlcursor.close()
-            self.sqlcon.close()
-    
-    def database_addtut(self, sock, recipient, reply_type, nickname, tut_name, tut_link):
-        # Check if the tutorial has already been added (to avoid duplicates)
-        search_query = [tut_name]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM tutorials WHERE tut_name=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [nickname, tut_name, tut_link]
-            self.sqlcursor.execute('INSERT INTO tutorials VALUES (null,?,?,?)', insertquery)
-            self.sqlcon.commit()
-            send_text = "Tutorial %s has been added with the link %s" % (tut_name, tut_link,)
-        else:
-            send_text = "Seems as though this tutorial has already been added"
-        sock.send("%s %s :%s\r\n" % (reply_type, recipient, send_text))
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def database_gettuts(self, sock, recipient, reply_type):
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM tutorials)')
-        if self.sqlcursor.fetchone()[0] == 0:
-            sock.send("%s %s :Nothing here yet !\r\n" % (reply_type, recipient))
-        else:
-            send_text = []
-            # Get list of requests and add them to list object send_text
-            self.sqlcursor.execute('SELECT * FROM tutorials')
-            for row in self.sqlcursor:
-                send_text.append("Tut: %s (%s) from %s (id:%s)" % (row[2], row[3], row[1], row[0],))
-            # Now for each item in send_text, send with speed depending on how many there are (avoid flooding).
-            for text in send_text:
-                sock.send("%s %s :%s\r\n" % (reply_type, recipient, text))
-                if 10 < len(send_text):
-                    time.sleep(1)
-                else:
-                    time.sleep(0.5)
-            self.sqlcursor.close()
-            self.sqlcon.close()
-    
-    def database_addtool(self, sock, recipient, reply_type, nickname, tool_name, tool_link):
-        # Check if the tutorial has already been added (to avoid duplicates)
-        search_query = [tool_name]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM tools WHERE tool_name=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [nickname, tool_name, tool_link]
-            self.sqlcursor.execute('INSERT INTO tools VALUES (null,?,?,?)', insertquery)
-            self.sqlcon.commit()
-            send_text = "Tool %s has been added with the link %s" % (tool_name, tool_link,)
-        else:
-            send_text = "Seems as though this tool has already been added"
-        sock.send("%s %s :%s\r\n" % (reply_type, recipient, send_text))
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def database_gettools(self, sock, recipient, reply_type):
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM tools)')
-        if self.sqlcursor.fetchone()[0] == 0:
-            sock.send("%s %s :Nothing here yet !\r\n" % (reply_type, recipient))
-        else:
-            send_text = []
-            # Get list of requests and add them to list object send_text
-            self.sqlcursor.execute('SELECT * FROM tools')
-            for row in self.sqlcursor:
-                send_text.append("Tool: %s (%s) from %s (id:%s)" % (row[2], row[3], row[1], row[0],))
-            # Now for each item in send_text, send with speed depending on how many there are (avoid flooding).
-            for text in send_text:
-                sock.send("%s %s :%s\r\n" % (reply_type, recipient, text))
-                if 10 < len(send_text):
-                    time.sleep(1)
-                else:
-                    time.sleep(0.5)
-            self.sqlcursor.close()
-            self.sqlcon.close()
-    
-    def database_addrequest(self, sock, recipient, reply_type, nickname, req_name, req_catagory):
-        # Check if the request has already been made (to avoid duplicates)
-        search_query = [req_name]
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM requests WHERE req_name=?)', search_query)
-        if self.sqlcursor.fetchone()[0] == 0:
-            insertquery = [nickname, req_name, req_catagory]
-            self.sqlcursor.execute('INSERT INTO requests VALUES (null,?,?,?)', insertquery)
-            self.sqlcon.commit()
-            send_text = "Request %s has been added under the catagory %s" % (req_name, req_catagory,)
-        else:
-            send_text = "Sorry, a request has already been made for this tutorial."
-        sock.send("%s %s :%s\r\n" % (reply_type, recipient, send_text))
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
-    def database_getrequests(self, sock, recipient, reply_type):
-        self.sqlcursor.execute('SELECT count(*) > 0 FROM (SELECT * FROM requests)')
-        if self.sqlcursor.fetchone()[0] == 0:
-            sock.send("%s %s :Nothing here yet !\r\n" % (reply_type, recipient))
-        else:
-            send_text = []
-            # Get list of requests and add them to list object send_text
-            self.sqlcursor.execute('SELECT * FROM requests')
-            for row in self.sqlcursor:
-                send_text.append("%s requested tutorial about %s under catagory %s (id:%s)" % (row[1], row[2], row[3], row[0],))
-            # Now for each item in send_text, send with speed depending on how many there are (avoid flooding).
-            for text in send_text:
-                sock.send("%s %s :%s\r\n" % (reply_type, recipient, text))
-                if 10 < len(send_text):
-                    time.sleep(1)
-                else:
-                    time.sleep(0.5)
-            self.sqlcursor.close()
-            self.sqlcon.close()
-    
-    def database_deleteitem(self, sock, recipient, reply_type, table, id):
-        delete_query = [id]
-        if table == "bookcase":
-            self.sqlcursor.execute('DELETE FROM bookcase WHERE id=?', delete_query)
-        elif table == "tutorials":
-            self.sqlcursor.execute('DELETE FROM tutorials WHERE id=?', delete_query)
-        elif table == "tools":
-            self.sqlcursor.execute('DELETE FROM tools WHERE id=?', delete_query)
-        elif table == "requests":
-            self.sqlcursor.execute('DELETE FROM requests WHERE id=?', delete_query)
-        self.sqlcon.commit()
-        sock.send("%s %s :Deleted item with id %s from %s\r\n" % (reply_type, recipient, id, table))
-        self.sqlcursor.close()
-        self.sqlcon.close()
-    
 
 
 
