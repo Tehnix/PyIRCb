@@ -11,7 +11,6 @@ from string import lower
 
 
 #from databaselayer import database
-#from usersystem import users
 from commands_list import Commands
 
 
