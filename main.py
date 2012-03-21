@@ -68,9 +68,13 @@ parser.add_option("-s", "--set", dest="set", action="store", nargs=5,
 (options, args) = parser.parse_args()
 
 
-
-if __name__ == '__main__':
-    ircbot = bot.IrcBot(host='46.38.57.109', channels={'#hq'})
+def main():
+    """ Starts the script """
+    ircbot = bot.IrcBot(host='irc.freenode.net', channels=['##channel'])
     thread = threading.Thread(target=ircbot.run_bot)
     thread.start()
     pass
+
+
+if __name__ == '__main__':
+    main()
