@@ -1,4 +1,9 @@
 ------------------------ Changelog for T3hb0t ------------------------ 
+1.1.0
+    - Rewrote the whole thing
+    - Clear sepeartion of commands and other code logic
+    - Database is now a submodule
+    - Cleaned up code
 1.0.1
     - Ported code to python3
     - Removed third-party module, socks.py
