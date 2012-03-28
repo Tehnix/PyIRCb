@@ -8,3 +8,6 @@ database.sql
 .tm_properties
 # Keeping them .gitignore files incase we ignore enitre content of folder
 !.gitignore
+
+
+db2/*
