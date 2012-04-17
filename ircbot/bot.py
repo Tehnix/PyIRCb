@@ -40,27 +40,32 @@ class IrcBot(threading.Thread):
             raise NameError('Host not specified!')
         if port is None:
             port = 6667
-        try:
-            self.operator = info['operator']
-        except KeyError:
+        if info is not None:
+            try:
+                self.operator = info['operator']
+            except KeyError:
+                self.operator = "$"
+            try:
+                self.channels = info['channels']
+            except KeyError:
+                self.channels = []
+            try:
+                self.nickname = info['nickname']
+            except KeyError:
+                self.nickname = "T3hb0t"
+            try:
+                self.realname = info['realname']
+            except KeyError:
+                self.realname = "T3hb0t"
+        else:
             self.operator = "$"
-        try:
-            self.channels = info['channels']
-        except KeyError:
             self.channels = []
-        try:
-            self.nickname = info['nickname']
-        except KeyError:
             self.nickname = "T3hb0t"
-        try:
-            self.realname = info['realname']
-        except KeyError:
             self.realname = "T3hb0t"
         self.readdata = None
         self.sock = None
         self.output = None
         self.command_list = None
-        
         self.hostname = host
         self.port = port
         self.use_ssl = use_ssl
@@ -242,7 +247,10 @@ class IrcBot(threading.Thread):
         if len(data.split()) < 3:
             return
         nick = get_nickname(data)
-        command = data.split()[3].lower()
+        try:
+            command = data.split()[3].lower()
+        except IndexError:
+            command = False
         for cmd in command_list():
             # Check if the command is in the Command class
             if command == (":%s%s" % (self.operator, cmd)).lower():

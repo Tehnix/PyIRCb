@@ -140,7 +140,7 @@ def main():
     ircbot = bot.IrcBot(
         host='irc.freenode.net',
         info={
-            'channels': ['##channel'],
+            'channels': ['##zealdev'],
             'operator': '$'
         }
     )
