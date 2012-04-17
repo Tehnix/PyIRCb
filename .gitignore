@@ -2,6 +2,7 @@
 .DS_Store 
 # We avoid .pyc files since they are unnecessary
 *.pyc
+databaselayer/*.pyc
 
 # We don't wan't the database either
 database.sql
