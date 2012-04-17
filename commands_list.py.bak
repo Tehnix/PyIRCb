@@ -33,7 +33,7 @@ class Commands(threading.Thread):
         nickname = self._get_nickname()
         self._message("Displaying command list:", nickname)
         docstrings = self._get_docstring(quantity='all')
-        for cmd, docstring in list(docstrings.items()):
+        for cmd, docstring in docstrings.items():
             if cmd != 'help':
                 self._message("%s :: %s" % (cmd, docstring,), nickname)
     

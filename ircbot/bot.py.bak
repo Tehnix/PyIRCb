@@ -276,7 +276,7 @@ class IrcBot(threading.Thread):
             thread = threading.Thread(target=getattr(commands, cmd),
                                       args=cmdArgs)
             thread.start()
-        except Exception as e:
+        except Exception, e:
             self._write("Exception when running command: %s" % (e,))
             self._message("Exception when running command: %s" % (e,),
                           initiator)
