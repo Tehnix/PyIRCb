@@ -1,4 +1,7 @@
------------------------- Changelog for T3hb0t ------------------------ 
+------------------------ Changelog for T3hb0t ------------------------
+1.2.0
+    - Ported to python 3
+    - optimized code with the help of pylint
 1.1.0
     - Rewrote the whole thing
     - Clear sepeartion of commands and other code logic
@@ -17,3 +20,17 @@
     - Moved around the code for readability
     - Bugfixes    
 -----------------------------------------------------------------------
+
+NOTES ON FUTURE:
+feedback on no new notes
+note id should be with the notes
+method to view all notes (will be notelist)
+
+perhaps
+$note <name>
+    to save a note
+$read <id>
+    id is optional, display all read notes
+$unread <id>
+    id is optional, display all unread notes
+in $read and $unread the <id> parameter will mark the note as read or unread repsectively
