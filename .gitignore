@@ -10,5 +10,5 @@ database.sql
 # Keeping them .gitignore files incase we ignore enitre content of folder
 !.gitignore
 
-
+oldcode/*
 db2/*
