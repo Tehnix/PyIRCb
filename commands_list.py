@@ -59,7 +59,13 @@ class Commands(threading.Thread):
     def _message(self, message, reciever=None, reply_type="NOTICE"):
         """ Construct and send a message """
         if reciever is not None:
-            self.sock.send("%s %s :%s\r\n" % (reply_type, reciever, message,))
+            text = "%s %s :[*] %s\r\n" % (reply_type, reciever, message,)
+            self.sock.send(to_bytes(text))
+    
+    def _raw_message(self, text):
+        """Construct an IRC message and send it"""
+        text = "%s\r\n" % (text,)
+        self.sock.send(to_bytes(text))
     
     def _get_nickname(self):
         """ Search through the IRC output for the nickname """
@@ -99,39 +105,80 @@ class Commands(threading.Thread):
                     'sender': nickname,
                     'note': note,
                     'status': '0'
-                }
+                },
+                out='none'
             )
             self._message('Saving note: %s' % (note,), nickname)
             write('Saving note: %s' % (note,))
+        elif recipient is None:
+            self._message(
+                "For whom may I save this, sir?",
+                nickname
+            )
+        elif note == "":
+            self._message(
+                "The note was empty, sooo not gonna store that, sorry ;)...",
+                nickname
+            )
         else:
-            notes = DB.fetchall('notes',
-                                {'recipient': nickname, 'status': '0'})
-            for note in notes:
-                write('Note: %s' % (note,))
-                self._message(note[3], nickname)
+            self._message(
+                "Can I take your message sir?...",
+                nickname
+            )
     
-    def notelist(self):
-        """ Usage: notelist """
+    def unread(self, note_id=None):
+        """ Usage: unread <id> """
         nickname = self._get_nickname()
-        notes = DB.fetchall('notes', {'recipient': nickname})
-        for note in notes:
-            write('[id: %s] Note :: %s' % (note[0], note[3],))
-            self._message("[id: %s] Note :: %s" % (note[0], note[3],),
-                          nickname)
+        if note_id is not None:
+            DB.update('notes',
+                      {'status': '0'},
+                      {'recipient': nickname, 'id': note_id})
+            write("Note with id %s is now marked as unread" % (note_id,))
+            self._message(
+                "Note with id %s is now marked as unread" % (note_id,),
+                nickname
+            )
+        else:
+            notes = DB.fetchall(
+                'notes',
+                {'recipient': nickname, 'status': '0'}
+            )
+            if len(notes) > 0:
+                for note in notes:
+                    write('%s' % (note,))
+                    self._message('[%s]%s' % (note[0], note[3],), nickname)
+            else:
+                self._message(
+                    "No unread messages today sir, sorry :(...",
+                    nickname
+                )
     
-    def noteread(self, note_id=None):
-        """ Usage: notelist """
+    def read(self, note_id=None):
+        """ Usage: read <id> """
         nickname = self._get_nickname()
         if note_id is not None:
             DB.update('notes',
                       {'status': '1'},
                       {'recipient': nickname, 'id': note_id})
             write("Note with id %s is now marked as read" % (note_id,))
-            self._message("Note with id %s is now marked as read" % (note_id,),
-                          nickname)
+            self._message(
+                "Note with id %s is now marked as read" % (note_id,),
+                nickname
+            )
         else:
-            write("Please specify an id")
-            self._message("Please specify an id", nickname)
+            notes = DB.fetchall(
+                'notes',
+                {'recipient': nickname, 'status': '1'}
+            )
+            if len(notes) > 0:
+                for note in notes:
+                    write('%s' % (note,))
+                    self._message('[%s]%s' % (note[0], note[3],), nickname)
+            else:
+                self._message(
+                    "No read messages so far sir, sorry :(...",
+                    nickname
+                )
     
     def backin(self, back_in=None):
         """ Usage: backin <time> """
@@ -145,7 +192,8 @@ class Commands(threading.Thread):
                     'nickname': nickname,
                     'start_time': start_time,
                     'back_time': back_in
-                }
+                },
+                out='output'
             )
             write("Saved: See you in %s" % (back_in,))
             self._message("Saved: See you in %s" % (back_in,), nickname)
@@ -155,35 +203,68 @@ class Commands(threading.Thread):
     
     def back(self, nickname=None):
         """ Usage: back <nickname> """
+        sender_nickname = self._get_nickname()
         if nickname is not None:
             backin = DB.fetchone('back', {'nickname': nickname})
             if backin is not None:
                 backin = back_in_time(backin[3], backin[2])
                 write("%s will be back at %s" % (nickname, backin,))
-                self._message("%s will be back at %s" % (nickname, backin,),
-                               nickname)
+                self._message(
+                    "%s will be back at %s" % (nickname, backin,),
+                    sender_nickname
+                )
             else:
-                write("No entry found for %s" % (nickname,))
-                self._message("No entry found for %s" % (nickname,), nickname)
+                write(
+                    "Sorry, but I don't know when %s will be back :("
+                    % (nickname,)
+                )
+                self._message(
+                    "Sorry, but I don't know when %s will be back :(" %
+                    (nickname,),
+                    sender_nickname
+                )
         else:
-            write("Please specify a nickname")
-            self._message("Please specify a nickname", nickname)
+            DB.delete('back', {'nickname': sender_nickname})
+            self._message("Welcome back sir!", sender_nickname)
 
 
 def write(text):
     """ Write output to stdout """
-    text = str(text) + "\n"
+    text = to_unicode(text)
+    text = "[*] %s\n" % (text,)
     sys.stdout.write(text)
     sys.stdout.flush()
+
+def to_bytes(text):
+    """Convert string to bytes"""
+    if type(text) != bytes:
+        try:
+            text = bytes(text, 'UTF-8')
+        except TypeError:
+            print("\n[WARNING] : Failed to encode from unicode to bytes\n")
+            print(type(text))
+            print(text)
+            text = b''
+    return text
+
+def to_unicode(text):
+    """Converts bytes to unicode"""
+    if type(text) != str:
+        try:
+            text = str(text, encoding='UTF-8')
+        except UnicodeDecodeError:
+            text = "\n[WARNING] : Failed to decode from bytes to unicode\n"
+    return text
+
 
 def get_docstring(cmd=None, quantity='one'):
     """
     Fetches the docstring of the given method
-        
+    
     Arg [quantity] specifies how many to fetch:
         one - fetches the given cmd
         all - fetches all cmds in Commands class
-        
+    
     """
     docstring = {}
     if quantity == 'one' and cmd is not None:
@@ -218,6 +299,7 @@ def command_list():
 
 def back_in_time(backin, start_time):
     """ Converts string given to a usable time """
+    # NOTE return the time in amount of time left
     if 'h' in backin:
         backin = int(start_time) + float(backin[0:-1]) * 3600
         backin = datetime.datetime.fromtimestamp(int(backin))

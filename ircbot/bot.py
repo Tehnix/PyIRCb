@@ -62,7 +62,6 @@ class IrcBot(threading.Thread):
             self.channels = []
             self.nickname = "T3hb0t"
             self.realname = "T3hb0t"
-        self.readdata = None
         self.sock = None
         self.output = None
         self.command_list = None
@@ -78,14 +77,21 @@ class IrcBot(threading.Thread):
     def _write(self, text):
         """Handle the output from the IRC bot"""
         if self.output:
-            text = str(text) + "\n"
+            text = to_unicode(text)
+            text = "[*] %s\n" % (text,)
             sys.stdout.write(text)
             sys.stdout.flush()
     
     def _message(self, message, reciever=None, reply_type="NOTICE"):
         """Construct and send a message"""
         if reciever is not None:
-            self.sock.send("%s %s :%s!\r\n" % (reply_type, reciever, message,))
+            text = "%s %s :[*] %s\r\n" % (reply_type, reciever, message,)
+            self.sock.send(to_bytes(text))
+    
+    def _raw_message(self, text):
+        """Construct an IRC message and send it"""
+        text = "%s\r\n" % (text,)
+        self.sock.send(to_bytes(text))
     
     def connect(self):
         """Connects to the host:port specified earlier"""
@@ -134,7 +140,7 @@ class IrcBot(threading.Thread):
             self.sock.close()
             raise BreakOutOfLoop()
         elif reason == "PART" or reason == "QUIT":
-            self.sock.send("%s\r\n" % reason)
+            self._raw_message(reason)
             self.sock.close()
             if timeout:
                 time.sleep(int(timeout[0]))
@@ -144,9 +150,9 @@ class IrcBot(threading.Thread):
         """Join the channels in the IRC"""
         self._write("Join rooms...")
         # Send nickname and identification to the server
-        self.sock.send("NICK %s\r\n" % (self.nickname,))
-        self.sock.send(
-            "USER %s %s +iw :%s\r\n" %
+        self._raw_message("NICK %s" % (self.nickname,))
+        self._raw_message(
+            "USER %s %s +iw :%s" %
             (self.realname, self.hostname, self.realname,)
         )
         # Join channels (if no CTCP)
@@ -155,17 +161,18 @@ class IrcBot(threading.Thread):
     
     def _join_room(self, room):
         """Joins the specified channel"""
-        self.sock.send("JOIN :%s\r\n" % (room,))
+        room = to_unicode(room)
+        self._raw_message("JOIN :%s" % (room,))
         self._write("Joining room: %s" % (room,))
     
     def listen(self):
         """Listen and handle the input"""
         while True:
             try:
-                self.readdata = self.sock.recv(4096)
-                self._write(self.readdata)
-                self.common_listens(self.readdata)
-                self.parse_command(self.readdata)
+                readdata = self.sock.recv(4096)
+                self._write(readdata)
+                self.common_listens(readdata)
+                self.parse_command(readdata)
             except socket.timeout:
                 self.disconnect("socket.timeout")
                 break
@@ -183,6 +190,7 @@ class IrcBot(threading.Thread):
     
     def common_listens(self, data):
         """Handles common listen items"""
+        data = to_unicode(data)
         # Disconnected from the server
         if data == 0:
             self.disconnect(data)
@@ -190,7 +198,7 @@ class IrcBot(threading.Thread):
         if data[0:4] == "PING":
             self._pong(data)
         # If nickname already in use, restart with a new nickname
-        if "%s :Nickname is already in use" % self.nickname in data:
+        if "%s :Nickname is already in use" % (self.nickname,) in data:
             self._change_nickname()
             raise BreakOutOfLoop()
         # Some servers request CTCP before we can connect to channels
@@ -200,29 +208,29 @@ class IrcBot(threading.Thread):
             self.sock.close()
             self.connect()
             raise BreakOutOfLoop()
-        if " 332 %s " % self.nickname in self.readdata:
+        if " 332 %s " % (self.nickname,) in data:
             pass
-        if "JOIN :" in self.readdata:
-            chan = self._get_channel(self.readdata)
-            nick = get_nickname(self.readdata)
+        if "JOIN :" in data:
+            chan = self._get_channel(data)
+            nick = get_nickname(data)
             if nick == self.nickname and chan in self.channels:
                 self._write("You succesfully joined channel: %s" % (chan,))
-        if "INVITE %s" % (self.nickname,) in self.readdata:
-            room = self.readdata.split()[3][1:]
+        if "INVITE %s" % (self.nickname,) in data:
+            room = data.split()[3][1:]
             self.channels.append(room)
             self._join_room(room)
     
     def _pong(self, data):
         """Handle PINGs by sending back a PONG"""
         self._write("PONG %s\r\n" % data.split()[1])
-        self.sock.send("PONG %s\r\n" % data.split()[1])
+        self._raw_message("PONG %s" % data.split()[1])
     
     def _ctcp(self):
         """Handle CTCP request"""
         self._write("CTCP request, sleeping and (re)joining channels !")
         time.sleep(2)
         for channel in self.channels:
-            self.sock.send("JOIN :%s\r\n" % channel)
+            self._raw_message("JOIN :%s" % (channel,))
     
     def _change_nickname(self, new_nick=None):
         """Change the nickname"""
@@ -244,6 +252,7 @@ class IrcBot(threading.Thread):
     
     def parse_command(self, data):
         """Search the IRC output looking for a command to execute"""
+        data = to_unicode(data)
         if len(data.split()) < 3:
             return
         nick = get_nickname(data)
@@ -257,19 +266,21 @@ class IrcBot(threading.Thread):
                 # If it has arguments
                 if len(data.split()) > 4:
                     self.execute_command(
-                        "%s" % cmd,
-                        nick, data.split()[4:len(data.split())]
+                        cmd,
+                        nick,
+                        data,
+                        cmd_args=data.split()[4:len(data.split())]
                     )
                 else:
-                    self.execute_command(cmd, nick)
+                    self.execute_command(cmd, nick, data)
     
-    def execute_command(self, cmd, initiator, cmd_args=None):
+    def execute_command(self, cmd, initiator, data, cmd_args=None):
         """Execute the command if it exists (and args are correct)"""
         if cmd_args is None:
             cmd_args = []
         self._write("Running Command: %s" % (cmd,))
         try:
-            commands = Commands(self.sock, self.readdata)
+            commands = Commands(self.sock, data)
             thread = threading.Thread(
                 target=getattr(commands, cmd),
                 args=cmd_args
@@ -283,6 +294,21 @@ class IrcBot(threading.Thread):
             )
 
 
+def to_bytes(text):
+    """Convert string to bytes"""
+    if type(text) != bytes:
+        text = bytes(text, 'UTF-8')
+    return text
+
+def to_unicode(text):
+    """Converts bytes to unicode"""
+    if type(text) != str:
+        try:
+            text = str(text, encoding='UTF-8')
+        except UnicodeDecodeError:
+            text = "\n[WARNING] : Failed to decode bytes!\n"
+    return text
+
 def get_nickname(data):
     """Search through the IRC output for the nickname"""
     return data.split("!")[0][1:]
@@ -291,12 +317,14 @@ def command_list():
     """Construct a list of all the commands"""
     cmd_list = []
     # These are common to the class, but we do not need them
-    cmd_list_ignores = ["daemon", "getName",
-                      "ident", "is_alive",
-                      "isAlive", "isDaemon",
-                      "join", "name",
-                      "run", "setDaemon",
-                      "setName", "start"]
+    cmd_list_ignores = [
+        "daemon", "getName",
+        "ident", "is_alive",
+        "isAlive", "isDaemon",
+        "join", "name",
+        "run", "setDaemon",
+        "setName", "start"
+    ]
     for i in range(len(inspect.getmembers(Commands))):
         if (inspect.getmembers(Commands)[i][0].startswith("_") or
             inspect.getmembers(Commands)[i][0] in cmd_list_ignores):

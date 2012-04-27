@@ -138,9 +138,11 @@ PARSER.add_option(
 def main():
     """Starts the script"""
     ircbot = bot.IrcBot(
-        host='irc.freenode.net',
+        host='irc.voxanon.net',
         info={
-            'channels': ['##zealdev'],
+            'nickname': 'Motoko',
+            'realname': 'Motoko Kusanagi'
+            'channels': ['#code'],
             'operator': '$'
         }
     )
