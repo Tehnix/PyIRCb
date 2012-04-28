@@ -141,7 +141,7 @@ def main():
         host='irc.voxanon.net',
         info={
             'nickname': 'Motoko',
-            'realname': 'Motoko Kusanagi'
+            'realname': 'Motoko Kusanagi',
             'channels': ['#code'],
             'operator': '$'
         }
