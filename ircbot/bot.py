@@ -205,9 +205,8 @@ class IrcBot(threading.Thread):
         if "\x01VERSION\x01" in data:
             self._ctcp()
         if data.find("451 JOIN :You have not registered") != -1:
-            self.sock.close()
-            self.connect()
-            raise BreakOutOfLoop()
+            for room in self.channels:
+                self._join_room(room)
         if " 332 %s " % (self.nickname,) in data:
             pass
         if "JOIN :" in data:
