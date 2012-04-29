@@ -360,6 +360,6 @@ def log_output(text):
     """Write text to file"""
     text = to_unicode(text)
     text = "[*] %s\n" % (text,)
-    log = open("bot_log.txt", "w")
+    log = open("bot_log.txt", "a")
     log.write(text)
     log.close()
