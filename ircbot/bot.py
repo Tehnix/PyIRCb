@@ -170,6 +170,7 @@ class IrcBot(threading.Thread):
         while True:
             try:
                 readdata = self.sock.recv(4096)
+                log_output(readdata)
                 self._write(readdata)
                 self.common_listens(readdata)
                 self.parse_command(readdata)
@@ -354,3 +355,11 @@ def get_docstring(cmd=None, quantity='one'):
     else:
         docstring = ''
     return docstring
+
+def log_output(text):
+    """Write text to file"""
+    text = to_unicode(text)
+    text = "[*] %s\n" % (text,)
+    log = open("bot_log.txt", "rw+")
+    log.write(text)
+    log.close()
