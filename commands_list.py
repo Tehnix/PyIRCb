@@ -63,8 +63,6 @@ class Commands(threading.Thread):
         except KeyError:
             self.users_in_room[chan] = []
         self.users_in_room[chan].append(nick)
-        print(chan)
-        print(self.users_in_room[chan])
     
     def _user_left(self, nick, chan):
         """Add joined user to instance variable"""
