@@ -12,9 +12,11 @@ import socket
 import ssl
 import time
 import sys
+import os
 import inspect
+import imp
 
-from commands_list import Commands
+import commands_list
 
 
 class BreakOutOfLoop(Exception):
@@ -68,6 +70,11 @@ class IrcBot(threading.Thread):
         self.hostname = host
         self.port = port
         self.use_ssl = use_ssl
+        self.commands = commands_list.Commands()
+        self.topic = None
+        self.local_command_list = [
+            'reload'
+        ]
     
     def run_bot(self, output=True):
         """Initializes the IRC bot"""
@@ -192,33 +199,78 @@ class IrcBot(threading.Thread):
     def common_listens(self, data):
         """Handles common listen items"""
         data = to_unicode(data)
+        split_data = data.split(":")
+        try:
+            split_data_first = split_data[0]
+        except IndexError:
+            split_data_first = ""
+        try:
+            split_data_second = split_data[1]
+        except IndexError:
+            split_data_second = ""
+        try:
+            split_data_third = split_data[2]
+        except IndexError:
+            split_data_third = ""
         # Disconnected from the server
         if data == 0:
             self.disconnect(data)
         # PING PONG, so we don't get disconnected
-        if data[0:4] == "PING":
-            self._pong(data)
+        try:
+            if "PING" in data[0:4]:
+                self._pong(data)
+            elif "PING" in data[0:8]:
+                self._pong(data)
+        except IndexError:
+            pass
         # If nickname already in use, restart with a new nickname
-        if "%s :Nickname is already in use" % (self.nickname,) in data:
+        if ("* %s" % (self.nickname,) in split_data_second and
+            "Nickname is already in use" in split_data_third):
             self._change_nickname()
             raise BreakOutOfLoop()
         # Some servers request CTCP before we can connect to channels
-        if "\x01VERSION\x01" in data:
+        # We are then forced to retry the join
+        if ("\x01VERSION\x01" in split_data_first or
+            "\x01VERSION\x01" in split_data_second):
             self._ctcp()
-        if data.find("451 JOIN :You have not registered") != -1:
+        # Not registered message
+        if "451 JOIN" in split_data_second:
+            time.sleep(1)
             for room in self.channels:
                 self._join_room(room)
-        if " 332 %s " % (self.nickname,) in data:
-            pass
-        if "JOIN :" in data:
-            chan = self._get_channel(data)
+        # Get the topic of the channel
+        if " 332 %s " % (self.nickname,) in split_data_second:
+            self.topic = get_topic(data)
+        # User list of the channel upon join
+        if " 353 %s" % (self.nickname,) in split_data_second:
+            chan = split_data_second.split("=")[1].replace(' ', '')
+            nicknames = split_data_third.split()
+            for nick in nicknames:
+                if nick != self.nickname:
+                    self.commands._user_join(nick, chan)
+        # A person joins the channel
+        if "JOIN :" in split_data_second:
             nick = get_nickname(data)
+            chan = get_channel(data, self.channels)
+            self.commands._user_join(nick, chan)
             if nick == self.nickname and chan in self.channels:
                 self._write("You succesfully joined channel: %s" % (chan,))
-        if "INVITE %s" % (self.nickname,) in data:
-            room = data.split()[3][1:]
-            self.channels.append(room)
-            self._join_room(room)
+        # A person leaves the channel
+        if "PART :" in split_data_second or "QUIT :" in split_data_second:
+            nick = get_nickname(data)
+            chan = get_channel(data, self.channels)
+            self.commands._user_left(nick, chan)
+        # Automatically join a channel on invite
+        if "INVITE %s" % (self.nickname,) in split_data_second:
+            try:
+                room = data.split()[3][1:]
+                self.channels.append(room)
+                self._join_room(room)
+            except IndexError:
+                pass
+        # Disconnect and reconnect if we ping timeout for some reason
+        if "Closing link" in split_data_second and "ERROR" in split_data_first:
+            self.disconnect("QUIT", 5)
     
     def _pong(self, data):
         """Handle PINGs by sending back a PONG"""
@@ -234,21 +286,15 @@ class IrcBot(threading.Thread):
     
     def _change_nickname(self, new_nick=None):
         """Change the nickname"""
-        self._write("""Nickname already in use. Changing nick and \
-                    reconnecting...""")
+        self._write(
+            """Nickname already in use. Changing nick and reconnecting..."""
+        )
         if new_nick is None:
-            self.nickname = self.nickname + str(time.time())[5:-3]
+            self.nickname = self.nickname + str(int(time.time()))[5:-2]
         else:
             self.nickname = new_nick
         self.sock.close()
         self.connect()
-    
-    def _get_channel(self, data):
-        """Search through the IRC output for the channel name"""
-        for channel in self.channels:
-            if channel == data.split()[2][1:]:
-                return data.split()[2][1:]
-        return False
     
     def parse_command(self, data):
         """Search the IRC output looking for a command to execute"""
@@ -273,6 +319,19 @@ class IrcBot(threading.Thread):
                     )
                 else:
                     self.execute_command(cmd, nick, data)
+        for cmd in self.local_command_list:
+            if command == (":%s%s" % (self.operator, cmd)).lower():
+                self._write("Running local command: %s" % (cmd,))
+                if command == ":$reload":
+                    global commands_list
+                    # Reload the Commands module
+                    self._write("Reloading Commands module")
+                    # Get users so we can transfer them to the new instance
+                    users = self.commands._users('get')
+                    imp.reload(commands_list)
+                    import commands_list
+                    self.commands = commands_list.Commands()
+                    self.commands._users('set', users)
     
     def execute_command(self, cmd, initiator, data, cmd_args=None):
         """Execute the command if it exists (and args are correct)"""
@@ -280,9 +339,9 @@ class IrcBot(threading.Thread):
             cmd_args = []
         self._write("Running Command: %s" % (cmd,))
         try:
-            commands = Commands(self.sock, data)
+            self.commands._data(self.sock, data, self.channels)
             thread = threading.Thread(
-                target=getattr(commands, cmd),
+                target=getattr(self.commands, cmd),
                 args=cmd_args
             )
             thread.start()
@@ -294,10 +353,14 @@ class IrcBot(threading.Thread):
             )
 
 
+
 def to_bytes(text):
     """Convert string to bytes"""
-    if type(text) != bytes:
-        text = bytes(text, 'UTF-8')
+    try:
+        if type(text) != bytes:
+            text = bytes(text, 'UTF-8')
+    except TypeError:
+        text = "\n[WARNING] : Failed to encode unicode!\n"
     return text
 
 def to_unicode(text):
@@ -307,11 +370,39 @@ def to_unicode(text):
             text = str(text, encoding='UTF-8')
         except UnicodeDecodeError:
             text = "\n[WARNING] : Failed to decode bytes!\n"
+        except TypeError:
+            text = "\n[WARNING] : Failed to decode bytes!\n"
     return text
 
 def get_nickname(data):
     """Search through the IRC output for the nickname"""
-    return data.split("!")[0][1:]
+    try:
+        return data.split("!")[0][1:]
+    except IndexError:
+        return False
+
+def get_channel(data, channels):
+    """Search through the IRC output for the channel name"""
+    chan = False
+    try:
+        for channel in channels:
+            if channel == data.split()[2]:
+                chan = data.split()[2]
+                # data.split()[3][1:]
+        if chan is False:
+            for channel in channels:
+                if channel == data.split()[2]:
+                    chan = data.split()[3][1:]
+    except IndexError:
+        pass
+    return chan.replace(' ', '')
+
+def get_topic(self, data):
+    """Extract the topic from the data"""
+    try:
+        return ":".join(text.split(":")[2:])
+    except IndexError:
+        return False
 
 def command_list():
     """Construct a list of all the commands"""
@@ -325,6 +416,7 @@ def command_list():
         "run", "setDaemon",
         "setName", "start"
     ]
+    Commands = commands_list.Commands
     for i in range(len(inspect.getmembers(Commands))):
         if (inspect.getmembers(Commands)[i][0].startswith("_") or
             inspect.getmembers(Commands)[i][0] in cmd_list_ignores):

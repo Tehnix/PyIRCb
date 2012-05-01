@@ -41,15 +41,62 @@ class Commands(threading.Thread):
     
     """
     
-    def __init__(self, socket, data):
-        """ Sets initial values """
+    def __init__(self):
+        """Sets initial values"""
         threading.Thread.__init__(self)
+        self.users_in_room = {}
+        self.sock = None
+        self.readdata = None
+        self.channels = None
+    
+    def _data(self, socket, data, channels):
+        """Saves the given data and socket to the instance"""
         self.sock = socket
         self.readdata = data
+        self.channels = channels
+    
+    def _user_join(self, nick, chan):
+        """Add joined user to instance variable"""
+        try:
+            self.users_in_room[chan]
+        except KeyError:
+            self.users_in_room[chan] = []
+        self.users_in_room[chan].append(nick)
+        print(chan)
+        print(self.users_in_room[chan])
+    
+    def _user_left(self, nick, chan):
+        """Add joined user to instance variable"""
+        try:
+            self.users_in_room[chan].remove(nick)
+        except KeyError:
+            self.users_in_room[chan] = []
+    
+    def _users(self, action, users=None):
+        """Sets or gets the instance variable"""
+        if action == "get":
+            return self.users_in_room
+        if action == "set":
+            self.users_in_room = users
+    
+    def users(self):
+        """Prints out all users in the room"""
+        nickname = get_nickname(self.readdata)
+        chan = get_channel(self.readdata, self.channels)
+        print(chan)
+        try:
+            self.users_in_room[chan]
+        except KeyError:
+            self.users_in_room[chan] = []
+        users = " ".join(self.users_in_room[chan])
+        if len(self.users_in_room[chan]) > 0:
+            self._message(users, nickname)
+        else:
+            self._message("Could not find any users :| !", nickname)
     
     def help(self):
-        """ Prints out the docstring of all the public methods """
-        nickname = self._get_nickname()
+        """Prints out the docstring of all the public methods"""
+        nickname = get_nickname(self.readdata)
         self._message("Displaying command list:", nickname)
         docstrings = get_docstring(quantity='all')
         for cmd, docstring in list(docstrings.items()):
@@ -57,7 +104,7 @@ class Commands(threading.Thread):
                 self._message("%s :: %s" % (cmd, docstring,), nickname)
     
     def _message(self, message, reciever=None, reply_type="NOTICE"):
-        """ Construct and send a message """
+        """Construct and send a message"""
         if reciever is not None:
             text = "%s %s :[*] %s\r\n" % (reply_type, reciever, message,)
             self.sock.send(to_bytes(text))
@@ -67,12 +114,8 @@ class Commands(threading.Thread):
         text = "%s\r\n" % (text,)
         self.sock.send(to_bytes(text))
     
-    def _get_nickname(self):
-        """ Search through the IRC output for the nickname """
-        return self.readdata.split("!")[0][1:]
-    
     def _extract_note(self):
-        """ Extract the note from the data """
+        """Extract the note from the data"""
         note = []
         tmp_note = []
         i = 0
@@ -89,10 +132,17 @@ class Commands(threading.Thread):
         # Remove the last \r\n from the note
         note = " ".join(note)[0:-2]
         return note
+        
+    def zen(self):
+        """Send some random python zen"""
+        # TODO make a list with python zen's and return random one
+        pass
     
     def note(self, recipient=None, *note):
-        """ Usage: note <to nickname> <note> """
-        nickname = self._get_nickname()
+        """$note : Usage: note <to nickname> <note>
+Stores a note for the given nickname.
+        """
+        nickname = get_nickname(self.readdata)
         note = self._extract_note()
         if recipient is not None and note != "":
             date_time = time.strftime("%b %d - %H:%M", time.localtime())
@@ -127,8 +177,11 @@ class Commands(threading.Thread):
             )
     
     def unread(self, note_id=None):
-        """ Usage: unread <id> """
-        nickname = self._get_nickname()
+        """ $unread : Usage: unread <id>
+Without <id>, list all notes marked as unread.
+With <i>, gives a note the status of 'unread', so it doesn't show in $read.
+        """
+        nickname = get_nickname(self.readdata)
         if note_id is not None:
             DB.update('notes',
                       {'status': '0'},
@@ -154,8 +207,11 @@ class Commands(threading.Thread):
                 )
     
     def read(self, note_id=None):
-        """ Usage: read <id> """
-        nickname = self._get_nickname()
+        """ $read : Usage: read <id>
+Without <id>, list all notes marked as read.
+With <i>, gives a note the status of 'read', so it doesn't show in $unread.
+        """
+        nickname = get_nickname(self.readdata)
         if note_id is not None:
             DB.update('notes',
                       {'status': '1'},
@@ -181,8 +237,8 @@ class Commands(threading.Thread):
                 )
     
     def backin(self, back_in=None):
-        """ Usage: backin <time> """
-        nickname = self._get_nickname()
+        """Usage: backin <time>"""
+        nickname = get_nickname(self.readdata)
         if back_in is not None:
             start_time = int(time.time())
             DB.delete('back', {'nickname': nickname})
@@ -202,8 +258,8 @@ class Commands(threading.Thread):
             self._message("Please specify a time", nickname)
     
     def back(self, nickname=None):
-        """ Usage: back <nickname> """
-        sender_nickname = self._get_nickname()
+        """Usage: back <nickname>"""
+        sender_nickname = get_nickname(self.readdata)
         if nickname is not None:
             backin = DB.fetchone('back', {'nickname': nickname})
             if backin is not None:
@@ -229,7 +285,7 @@ class Commands(threading.Thread):
 
 
 def write(text):
-    """ Write output to stdout """
+    """Write output to stdout"""
     text = to_unicode(text)
     text = "[*] %s\n" % (text,)
     sys.stdout.write(text)
@@ -256,6 +312,28 @@ def to_unicode(text):
             text = "\n[WARNING] : Failed to decode from bytes to unicode\n"
     return text
 
+def get_nickname(data):
+    """Search through the IRC output for the nickname"""
+    try:
+        return data.split("!")[0][1:]
+    except IndexError:
+        return False
+
+def get_channel(data, channels):
+    """Search through the IRC output for the channel name"""
+    chan = False
+    try:
+        for channel in channels:
+            if channel == data.split()[2]:
+                chan = data.split()[2]
+                # data.split()[3][1:]
+        if chan is False:
+            for channel in channels:
+                if channel == data.split()[2]:
+                    chan = data.split()[3][1:]
+    except IndexError:
+        pass
+    return chan.replace(' ', '')
 
 def get_docstring(cmd=None, quantity='one'):
     """
@@ -278,7 +356,7 @@ def get_docstring(cmd=None, quantity='one'):
 
 
 def command_list():
-    """ Construct a list of all the commands """
+    """Construct a list of all the commands"""
     cmd_list = []
     # These are common to the class, but we do not need them
     cmd_list_ignores = ["daemon", "getName",
@@ -298,7 +376,7 @@ def command_list():
     return cmd_list
 
 def back_in_time(backin, start_time):
-    """ Converts string given to a usable time """
+    """Converts string given to a usable time"""
     # NOTE return the time in amount of time left
     if 'h' in backin:
         backin = int(start_time) + float(backin[0:-1]) * 3600

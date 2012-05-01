@@ -1,14 +1,18 @@
-# Files to ignore (avoid Mac OS's .DS_store's)
-.DS_Store 
-# We avoid .pyc files since they are unnecessary
-*.pyc
-databaselayer/*.pyc
-
-# We don't wan't the database either
-database.sql
-.tm_properties
 # Keeping them .gitignore files incase we ignore enitre content of folder
 !.gitignore
 
+# Files to ignore (avoid Mac OS's .DS_store's)
+.DS_Store 
+
+# We avoid .pyc files since they are unnecessary
+*.pyc
+databaselayer/*.pyc
+bot/*.pyc
+
+# We don't wan't the database either
+database.sql
+
+.tm_properties
+bot_log.txt
+
 oldcode/*
-db2/*
