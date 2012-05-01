@@ -138,12 +138,12 @@ PARSER.add_option(
 def main():
     """Starts the script"""
     ircbot = bot.IrcBot(
-        host='irc.freenode.net',
+        host='irc.voxanon.net',
         info={
-            'nickname': 'Motoko',
+            'nickname': 'Innocence',
             'realname': 'Motoko Kusanagi',
-            'channels': ['##zealdev'],
-            'operator': '$'
+            'channels': ['#code'],
+            'operator': '?'
         }
     )
     thread = threading.Thread(target=ircbot.run_bot)
