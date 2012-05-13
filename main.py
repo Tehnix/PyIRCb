@@ -197,7 +197,7 @@ def main():
     elif OPTIONS.use:
         ircbot = bot.IrcBot(
             host=OPTIONS.use[1],
-            port=OPTIONS.use[2],
+            port=int(OPTIONS.use[2]),
             info={
                 'nickname': OPTIONS.use[0],
                 'realname': 'Motoko Kusanagi',
