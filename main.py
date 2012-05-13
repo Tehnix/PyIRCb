@@ -11,9 +11,9 @@ from ircbot import bot
 
 
 # Bot version number
-BOT_VERSION = "1.2.0"
+__MODULE_VERSION__ = "1.3.0"
 # Bot deployment details
-BOT_DEPLOYMENT = ".py"
+__MODULE_DEPLOYMENT__ = ".py"
 
 PARSER_DESC = """
 ,----------------------------------------------------------------------------,
@@ -133,21 +133,89 @@ PARSER.add_option(
     nargs=5,
     help="Saves a setting. Usage: -s <id> <nick> <host> <port> <channels>"
 )
+PARSER.add_option(
+    "-v",
+    "--verbose",
+    dest="verbose",
+    default=False,
+    action="store_true",
+    help="Makes the bot more verbose"
+)
 (OPTIONS, ARGS) = PARSER.parse_args()
+
+
+def to_unicode(text):
+    """Converts bytes to unicode"""
+    if type(text) != str:
+        try:
+            text = str(text, encoding='UTF-8')
+        except UnicodeDecodeError:
+            text = "\n[WARNING] : Failed to decode bytes!\n"
+        except TypeError:
+            text = "\n[WARNING] : Failed to decode bytes!\n"
+    return text
+
+
+def log_output(text, file_name="bot_log.txt"):
+    """Write text to file"""
+    text = to_unicode(text)
+    text = "[*] %s\n" % (text,)
+    log = open(file_name, "a")
+    log.write(text)
+    log.close()
+
 
 def main():
     """Starts the script"""
-    ircbot = bot.IrcBot(
-        host='irc.voxanon.net',
-        info={
-            'nickname': 'Innocence',
-            'realname': 'Motoko Kusanagi',
-            'channels': ['#code'],
-            'operator': '?'
-        }
-    )
-    thread = threading.Thread(target=ircbot.run_bot)
-    thread.start()
+    operator = '?'
+    if OPTIONS.cmd_op:
+        operator = OPTIONS.cmd_op
+    identify = False
+    if OPTIONS.identify:
+        identify = OPTIONS.identify
+    ssl = False
+    if OPTIONS.ssl:
+        ssl = OPTIONS.ssl
+
+    if OPTIONS.run:
+        ircbot = bot.IrcBot(
+            host='irc.freenode.net',
+            info={
+                'nickname': 'Innocence',
+                'realname': 'Motoko Kusanagi',
+                'channels': ['##zealdev'],
+                'operator': str(operator),
+                'identify': identify
+            },
+            use_ssl=ssl
+        )
+        thread = threading.Thread(
+            target=ircbot.run_bot,
+            args=(OPTIONS.verbose,)
+        )
+        thread.start()
+    elif OPTIONS.use:
+        ircbot = bot.IrcBot(
+            host=OPTIONS.use[1],
+            port=OPTIONS.use[2],
+            info={
+                'nickname': OPTIONS.use[0],
+                'realname': 'Motoko Kusanagi',
+                'channels': OPTIONS.use[3].split(),
+                'operator': str(operator),
+                'identify': identify
+            },
+            use_ssl=ssl
+        )
+        thread = threading.Thread(
+            target=ircbot.run_bot,
+            args=(OPTIONS.verbose,)
+        )
+        thread.start()
+
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as catched:
+        log_output(catched, "bot_crashlog.txt")

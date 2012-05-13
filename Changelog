@@ -1,5 +1,5 @@
 ------------------------ Changelog for T3hb0t ------------------------
-1.2.0
+2.0.0
     - Ported to python 3
     - optimized code with the help of pylint
 1.1.0

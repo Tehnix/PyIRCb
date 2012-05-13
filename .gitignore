@@ -14,5 +14,6 @@ database.sql
 
 .tm_properties
 bot_log.txt
+bot_crashlog.txt
 
 oldcode/*
