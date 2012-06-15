@@ -352,7 +352,7 @@ Trying again..."""
         for cmd in self.local_command_list:
             if command == (":%s%s" % (self.info['operator'], cmd)).lower():
                 self._write("Running local command: %s" % (cmd,))
-                if command == ":$reload":
+                if command == ":%sreload" % (self.info['operator'],):
                     global commands
                     # Reload the Commands module
                     self._write("Reloading Commands module")
@@ -418,16 +418,15 @@ def get_nickname(data):
 
 def get_channel(data, channels):
     """Search through the IRC output for the channel name"""
-    chan = False
+    chan = ""
     try:
         for channel in channels:
-            if channel == data.split()[2]:
-                chan = data.split()[2]
-                # data.split()[3][1:]
+            if channel == data.split()[2].lower():
+                chan = data.split()[2].lower()
         if chan is False:
             for channel in channels:
-                if channel == data.split()[2]:
-                    chan = data.split()[3][1:]
+                if channel == data.split()[2].lower():
+                    chan = data.split()[3][1:].lower()
     except IndexError:
         pass
     return chan.replace(' ', '')
