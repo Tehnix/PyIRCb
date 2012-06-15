@@ -1,6 +1,6 @@
 ##Information / README / Documentation / Installation
 ####0x01        Intro
-T3hb0t is an IRC bot client capable of connecting to multiple servers
+PyBot is an IRC bot client capable of connecting to multiple servers
 and channels. Easily customized and easy to add commands.
 
 ####0x02        License
@@ -36,7 +36,7 @@ Is found in the license file. But also here:
 ####0x03        Installation
 Clone the repository
 
-<code>$ git clone git@github.com:ZealDev/T3hb0t.git</code>
+<code>$ git clone git@github.com:ZealDev/PyBot.git</code>
 
 
 - - -
