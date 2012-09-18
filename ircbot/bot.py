@@ -214,7 +214,7 @@ Trying again..."""
                 break
             except (KeyboardInterrupt, SystemExit):
                 self.disconnect("socket.timeout")
-                break
+                raise KeyboardInterrupt
             except UnicodeDecodeError:
                 continue
             except BreakOutOfLoop:
@@ -377,6 +377,7 @@ Trying again..."""
                 target=getattr(self.commands, cmd),
                 args=cmd_args
             )
+            thread.daemon = True
             thread.start()
         except Exception as catched:
             self._write("Exception when running command: %s" % (catched,))

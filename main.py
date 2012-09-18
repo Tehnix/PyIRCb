@@ -6,6 +6,7 @@ Starts the ircbot and runs it with supplied arguments.
 """
 from optparse import OptionParser
 import threading
+import sys
 
 from ircbot import bot
 
@@ -193,6 +194,7 @@ def main():
             target=ircbot.run_bot,
             args=(OPTIONS.verbose,)
         )
+        thread.daemon = True
         thread.start()
     elif OPTIONS.use:
         ircbot = bot.IrcBot(
@@ -211,11 +213,14 @@ def main():
             target=ircbot.run_bot,
             args=(OPTIONS.verbose,)
         )
+        thread.daemon = True
         thread.start()
 
 
 if __name__ == '__main__':
     try:
         main()
+    except KeyboardInterrupt:
+        sys.exit(0)
     except Exception as catched:
         log_output(catched, "bot_crashlog.txt")
