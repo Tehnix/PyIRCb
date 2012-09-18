@@ -1,4 +1,4 @@
------------------------- Changelog for T3hb0t ------------------------
+------------------------ Changelog for PyBot ------------------------
 2.0.0
     - Ported to python 3
     - optimized code with the help of pylint
@@ -19,18 +19,17 @@
     - Added proxy support and changed to third-party module, socks.py (not fully functional)
     - Moved around the code for readability
     - Bugfixes    
------------------------------------------------------------------------
+---------------------------------------------------------------------
 
 NOTES ON FUTURE:
-feedback on no new notes
-note id should be with the notes
-method to view all notes (will be notelist)
-
-perhaps
-$note <name>
-    to save a note
-$read <id>
-    id is optional, display all read notes
-$unread <id>
-    id is optional, display all unread notes
-in $read and $unread the <id> parameter will mark the note as read or unread repsectively
+Complete rewrite using asyncore...
+Features:
+	- Flush cache on CloudFlare
+	- Restart Django app
+	- Collect the static files (and then flush cache)
+	- Hooks to github, so when something is pushed/merged, we get notified
+	- Fetch statistics from CloudFlare
+	- Fetch statistics from Google Analytics
+	- Look up something in the python docs
+	- Save and get notes
+	- Be back in x time
