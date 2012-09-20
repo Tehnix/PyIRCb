@@ -78,6 +78,7 @@ class ChannelObject(object):
     """Container for channel data."""
 
     def __init__(self):
+        super(ChannelObject, self).__init__()
         self.name = None
         self.users = {}
 
