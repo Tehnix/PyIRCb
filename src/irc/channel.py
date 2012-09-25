@@ -5,3 +5,6 @@ IRC channels...
 
 """
 
+
+class Channel(object):
+    pass

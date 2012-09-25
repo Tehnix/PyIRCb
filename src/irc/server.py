@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-IRC commands...
+IRC servers...
 
 """
 
+
+class Server(object):
+    pass

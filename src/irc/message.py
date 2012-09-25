@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-IRC bot...
+IRC messages...
 
 """
 
+
+class Message(object):
+    pass

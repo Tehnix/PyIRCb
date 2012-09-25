@@ -5,3 +5,6 @@ IRC users...
 
 """
 
+
+class User(object):
+    pass
