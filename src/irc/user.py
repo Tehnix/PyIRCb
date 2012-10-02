@@ -7,4 +7,7 @@ IRC users...
 
 
 class User(object):
-    pass
+    
+    def __init__(self, nickname):
+        super(Channel, self).__init__()
+        self.nickname = nickname

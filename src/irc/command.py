@@ -7,4 +7,7 @@ IRC commands...
 
 
 class Command(object):
-    pass
+    
+    def __init__(self, command):
+        super(Channel, self).__init__()
+        self.command = command

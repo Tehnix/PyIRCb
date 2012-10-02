@@ -7,6 +7,8 @@ Settings file reader
 
 import ast
 
+import src.utilities as util
+
 
 class Settings(object):
     """Reads the settings file, parses it and converts it into attributes."""
@@ -48,7 +50,3 @@ class Settings(object):
         """Getter for the _settingsFileData attribute."""
         self._settings = value
 
-
-def warning(text):
-    """Warn the user about an error."""
-    print "Settings Error: %s" % (text,)
