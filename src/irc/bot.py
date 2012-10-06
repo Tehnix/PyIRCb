@@ -12,6 +12,7 @@ import time
 import src.utilities as util
 import src.irc.server
 import src.irc.channel
+import src.irc.parser
 
 
 class Bot(object):
@@ -19,6 +20,7 @@ class Bot(object):
     def __init__(self, settingsInstance, info):
         """Prepare the object."""
         super(Bot, self).__init__()
+        self.parserInstance = src.irc.parser.Parser()
         self.settingsInstance = settingsInstance
         self.info = info
         self.sock = None
@@ -77,8 +79,8 @@ class Bot(object):
                 )
                 break
             else:
-                # If all goes well, we continue to join
-                pass
+                self.parserInstance.sock = self.sock
+                self.parserInstance.parse()
                 
     def destroy(self):
         """
@@ -86,6 +88,6 @@ class Bot(object):
         server and closing the socket.
         
         """
-        # Send a disconnect to the server, then close 
+        # self.parserInstance.disconnect()
         self.sock.close()
 

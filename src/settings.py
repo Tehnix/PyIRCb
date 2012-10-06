@@ -14,7 +14,7 @@ class Settings(object):
     """Reads the settings file, parses it and converts it into attributes."""
     
     def __init__(self):
-        """Initialize the super class, and read the settings file."""
+        """Set the initial settings file name."""
         super(Settings, self).__init__()
         try:
             self.settingsFilePath = 'pybot.conf'
