@@ -5,6 +5,8 @@ Various utitity methods...
 
 """
 
+import inspect
+
 
 def write(text, outputType="*"):
     """Write out the given text."""
@@ -29,3 +31,9 @@ def toUnicode(text):
         except TypeError:
             text = "\n[WARNING] : Failed to decode bytes!\n"
     return text
+
+def getDocstring(targetFunc, targetClass=None):
+    """Fetches the docstring of the given function/method."""
+    if targetClass is None:
+        return inspect.cleandoc(inspect.getdoc(targetFunc))
+    return inspect.cleandoc(inspect.getdoc(getattr(targetClass, targetFunc)))

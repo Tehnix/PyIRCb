@@ -5,8 +5,11 @@ IRC messages...
 
 """
 
+import src.irc.command
+
 
 class Parser(object):
+    """Parse IRC output and react to commands."""
     
     def __init__(self):
         """Prepare the object."""
@@ -14,9 +17,10 @@ class Parser(object):
         self.sock = None
         self.readBuffer = None
         self.todo = []
+        self.commandInstance =  src.irc.command.Command()
     
     def parse(self):
-        pass
+        self.commandInstance.execute('test')
     
     @property
     def sock(self):
