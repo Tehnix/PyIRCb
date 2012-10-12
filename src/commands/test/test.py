@@ -8,9 +8,11 @@ Test command...
 
 class Test(object):
     
-    def __init__(self, cmdName):
+    def __init__(self, commandInstance, cmdName):
         super(Test, self).__init__()
-        getattr(self, cmdName)()
+        self.commandInstance = commandInstance
+        if cmdName is not None:
+            getattr(self, cmdName)()
     
     def callMe(self):
-        print(':DDDDDDDD....')
+        self.commandInstance.replyWithMessage(':DDDDDDDDD')

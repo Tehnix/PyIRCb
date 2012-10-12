@@ -26,6 +26,8 @@ class Command(object):
         self.sock = None
         self.running = False
         self.loadTheModules()
+        self.user = ""
+        self.channel = ""
     
     def pong(self, data):
         pong = data.split(":")[1]
@@ -53,16 +55,25 @@ class Command(object):
         pass
     
     def sendRawMessage(self, text):
+        util.write(text)
         text = util.toBytes("%s\r\n" % (text,))
+        self.sock.send(text)
+
+    def replyWithMessage(self, text, msgType='PRIVMSG'):
+        util.write(text)
+        text = util.toBytes("%s %s :%s\r\n" % (msgType, self.channel, text,))
         self.sock.send(text)
     
     def execute(self, command):
-        #!! self.commandInstance.execute('test.callMe')
+        util.write("Executing %s" % (command,))
         cmd = command.split('.')
-        if len(cmd) > 1:
-            getattr(self.commandModules[cmd[0]], cmd[0].title())(cmd[1])
-        else:
-            getattr(self.commandModules[cmd[0]], cmd[0].title())()
+        try:
+            if len(cmd) > 1:
+                getattr(self.commandModules[cmd[0]], cmd[0].title())(self, cmd[1])
+            else:
+                getattr(self.commandModules[command], command.title())(self, None)
+        except AttributeError:
+            self.replyWithMessage("Command '%s' was not found" % (command,))
     
     def loadTheModules(self):
         """

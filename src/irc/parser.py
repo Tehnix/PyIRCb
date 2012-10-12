@@ -33,13 +33,14 @@ class Parser(object):
         self.readBuffer = None
         self.todo = []
         self.node = None
+        self.nick = self.settingsInstance.settings['nickname']
     
     def parse(self):
         while True:
             try:
                 readbuffer = util.toUnicode(self.sock.recv(4096)).split('\r\n')
                 for data in readbuffer:
-                    print(data)
+                    util.write(data)
                     self._parse(data)
                 time.sleep(0.1)
             except socket.timeout:
@@ -55,7 +56,6 @@ class Parser(object):
                 break
     
     def _parse(self, data):
-        nick = self.settingsInstance.settings['nickname']
         if self.node is None:
             self.node = data.split()[0][1:]
         # Server messages start with :node (eg :verne.freenode.net), so we
@@ -63,13 +63,22 @@ class Parser(object):
         if data.startswith("PING :"):
             self.commandInstance.pong(data)
         if data.startswith(":%s" % self.node):
-            if "376 %s :End of /MOTD command." % (self.settingsInstance.settings['nickname'],):
+            if "376 %s :End of /MOTD command." % (self.settingsInstance.settings['nickname'],) in data:
                 self.commandInstance.joinRooms(self.botInstance.channels)
             if "* :*** No Ident response" in data:
                 self.commandInstance.ident()
                 self.commandInstance.joinRooms(self.botInstance.channels)
         if data.startswith("ERROR :Closing Link:"):
             raise BreakOutOfLoop
+        try:
+            data = data.split(':')
+            if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
+                self.commandInstance.user = data[1].split()[0].split('!')[0]
+                self.commandInstance.channel = data[1].split()[2]
+                if data[2].startswith(self.botInstance.operator):
+                    self.commandInstance.execute(data[2][1:])
+        except IndexError:
+            pass
     
     def disconnect(self):
         self.commandInstance.disconnect()
