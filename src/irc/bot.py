@@ -20,7 +20,7 @@ class Bot(object):
     def __init__(self, settingsInstance, info):
         """Prepare the object."""
         super(Bot, self).__init__()
-        self.parserInstance = src.irc.parser.Parser()
+        self.parserInstance = src.irc.parser.Parser(settingsInstance, self)
         self.settingsInstance = settingsInstance
         self.info = info
         self.sock = None
@@ -79,7 +79,8 @@ class Bot(object):
                 )
                 break
             else:
-                self.parserInstance.sock = self.sock
+                # We have succesfully connected, so we can start parsing
+                self.parserInstance.commandInstance.ident()
                 self.parserInstance.parse()
                 
     def destroy(self):
@@ -88,6 +89,18 @@ class Bot(object):
         server and closing the socket.
         
         """
-        # self.parserInstance.disconnect()
+        self.parserInstance.disconnect()
         self.sock.close()
+        self.sock = None
+    
+    @property
+    def sock(self):
+        """Getter for the _sock attribute."""
+        return self._sock
+
+    @sock.setter
+    def sock(self, value):
+        """Getter for the _sock attribute."""
+        self._sock = value
+        self.parserInstance.sock = self.sock
 
