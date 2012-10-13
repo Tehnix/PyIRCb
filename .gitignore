@@ -5,6 +5,8 @@
 .DS_Store 
 .DS_Store
 
+pybot.conf
+
 *.pyc
 src/*.pyc
 src/irc/*.pyc

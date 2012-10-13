@@ -62,6 +62,8 @@ class Parser(object):
         # check for this and can then be confident it's from the server
         if data.startswith("PING :"):
             self.commandInstance.pong(data)
+        if data.startswith("\x01VERSION\x01"):
+            self.commandInstance.ctcp()
         if data.startswith(":%s" % self.node):
             if "376 %s :End of /MOTD command." % (self.settingsInstance.settings['nickname'],) in data:
                 self.commandInstance.joinRooms(self.botInstance.channels)

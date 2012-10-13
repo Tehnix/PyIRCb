@@ -41,6 +41,9 @@ class Command(object):
         self.sendRawMessage("NICK %s" % nick)
         self.sendRawMessage("USER %s %s +iw :%s" % (real, host, real,))
     
+    def ctcp(self):
+        self.sendRawMessage("NOTICE %s :\001VERSION PyBot : v2.0 : Python 3\001" % self.user)
+
     def joinRooms(self, channelDict):
         for name, obj in channelDict.items():
             self.joinRoom(obj.name)
@@ -52,7 +55,7 @@ class Command(object):
         pass
     
     def disconnect(self):
-        pass
+        self.sendRawMessage("QUIT")
     
     def sendRawMessage(self, text):
         util.write(text)
@@ -69,7 +72,8 @@ class Command(object):
         cmd = command.split('.')
         try:
             if len(cmd) > 1:
-                getattr(self.commandModules[cmd[0]], cmd[0].title())(self, cmd[1])
+                if !cmd[1].startswith('_'):
+                    getattr(self.commandModules[cmd[0]], cmd[0].title())(self, cmd[1])
             else:
                 getattr(self.commandModules[command], command.title())(self, None)
         except AttributeError:
