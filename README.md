@@ -1,9 +1,16 @@
-##Information / README / Documentation / Installation
+#PyBot
+An easily extensible IRC bot written in python.
+
+---
+
 ####0x01        Intro
 PyBot is an IRC bot client capable of connecting to multiple servers
 and channels. Easily customized and easy to add commands.
 
+---
 ####0x02        Configuration
+The configuration file is structured as a python dictionary.
+
 The following is an example of a configuration file. The config file should be placed in the root directory of the bot (i.e. the same directory as the src folder is placed in).
 <pre>
     {
@@ -30,6 +37,7 @@ The following is an example of a configuration file. The config file should be p
     }
 </pre>
 
+---
 ####0x03        License
 Is found in the license file. But also here:
 <pre>
