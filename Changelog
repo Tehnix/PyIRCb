@@ -1,7 +1,12 @@
 ------------------------ Changelog for PyBot ------------------------
+3.0.0
+    - Complete rewirte of the bot
+    - Using asyncore
+    - Easier to extend commands
+    - Better seperation of the objects and logic
 2.0.0
     - Ported to python 3
-    - optimized code with the help of pylint
+    - Optimized code with the help of pylint
 1.1.0
     - Rewrote the whole thing
     - Clear sepeartion of commands and other code logic
