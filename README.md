@@ -1,9 +1,39 @@
-##Information / README / Documentation / Installation
-####0x01        Intro
-PyBot is an IRC bot client capable of connecting to multiple servers
-and channels. Easily customized and easy to add commands.
+#PyBot
+An easily extensible IRC bot written in python 3.
 
-####0x02        License
+---
+
+###Configuration
+The configuration file is structured as a python dictionary.
+
+The following is an example of a configuration file. The config file should be placed in the root directory of the bot (i.e. the same directory as the src folder is placed in).
+<pre>
+{
+    'nickname': 'PyBot',
+    'realname': 'PyBot',
+    'servers': {
+        'freenode': {
+            'address': 'irc.freenode.org',
+            'port': 6697,
+            'ssl': True,
+            'identify': False,
+            'channels': [
+                '#python'
+            ]
+        }
+    },
+    'commands': {
+        'cf': {
+            'tkn': 'cloudflare token',
+            'email': 'cloudflare email',
+            'z': 'website domain name'
+        }
+    } 
+}
+</pre>
+
+---
+###License
 Is found in the license file. But also here:
 <pre>
     Copyright (c) 2012, Christian Kjær Laustsen (Tehnix)
