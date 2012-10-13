@@ -5,6 +5,7 @@ IRC commands...
 
 """
 
+import imp
 import pkgutil
 import sys
 import importlib
@@ -30,10 +31,12 @@ class Command(object):
         self.channel = ""
     
     def pong(self, data):
+        """Respond to a PING with a PONG."""
         pong = data.split(":")[1]
         self.sendRawMessage("PONG :%s" % (pong,))
  
     def ident(self):
+        """Send the identification and nickname to the server."""
         util.write("Sending ident")
         nick = self.settingsInstance.settings['nickname']
         real = self.settingsInstance.settings['realname']
@@ -42,43 +45,68 @@ class Command(object):
         self.sendRawMessage("USER %s %s +iw :%s" % (real, host, real,))
     
     def ctcp(self):
+        """Respond to a CTCP request."""
         self.sendRawMessage("NOTICE %s :\001VERSION PyBot : v2.0 : Python 3\001" % self.user)
 
     def joinRooms(self, channelDict):
+        """Loop through all the channels in channelDict, and join the rooms."""
         for name, obj in channelDict.items():
             self.joinRoom(obj.name)
     
     def joinRoom(self, room):
+        """Make the bot join a room."""
         self.sendRawMessage("JOIN :%s" % (room,))
     
     def identify(self):
+        """Identify the bot (login)."""
         pass
     
     def disconnect(self):
+        """Disconnect from the IRC server."""
         self.sendRawMessage("QUIT")
     
     def sendRawMessage(self, text):
+        """Send a raw message to the socket."""
         util.write(text)
         text = util.toBytes("%s\r\n" % (text,))
         self.sock.send(text)
 
     def replyWithMessage(self, text, msgType='PRIVMSG'):
+        """Send a message to the channel from which we received the command."""
         util.write(text)
         text = util.toBytes("%s %s :%s\r\n" % (msgType, self.channel, text,))
         self.sock.send(text)
     
     def execute(self, command):
+        """
+        Execute the command by seperating it on '.' and then taking the first
+        index, (e.g. test.testing) and use the module 'src.commands.test.test'
+        and the class Test, then pass the second index 'testing' as an arg to
+        the __init__ of the class, which then executes the method.
+
+        """
         util.write("Executing %s" % (command,))
         cmd = command.split('.')
         try:
             if len(cmd) > 1:
-                if !cmd[1].startswith('_'):
-                    getattr(self.commandModules[cmd[0]], cmd[0].title())(self, cmd[1])
+                if not cmd[1].startswith('_'):
+                    getattr(self.commandModules[cmd[0]], cmd[0].title())(self.settingsInstance, self, cmd[1])
             else:
-                getattr(self.commandModules[command], command.title())(self, None)
+                getattr(self.commandModules[command], command.title())(self.settingsInstance, self, None)
         except AttributeError:
             self.replyWithMessage("Command '%s' was not found" % (command,))
+        except Exception as e:
+            self.replyWithMessage("Exception occured: %s " % (e,))
     
+    def update(self):
+        """
+        Reload all the command modules previously imported and saved to the
+        class variable commandModules.
+
+        """
+        for name, module in self.commandModules.items():
+            imp.reload(module)
+
     def loadTheModules(self):
         """
         Dynamically load all the packages/modules in src/commands and add them

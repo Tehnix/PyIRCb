@@ -36,6 +36,11 @@ class Parser(object):
         self.nick = self.settingsInstance.settings['nickname']
     
     def parse(self):
+        """
+        Read the data from the socket, split it by \r\n and send it to the
+        _parse() method.
+        
+        """
         while True:
             try:
                 readbuffer = util.toUnicode(self.sock.recv(4096)).split('\r\n')
@@ -56,6 +61,7 @@ class Parser(object):
                 break
     
     def _parse(self, data):
+        """Parse through the data stream received from the socket."""
         if self.node is None:
             self.node = data.split()[0][1:]
         # Server messages start with :node (eg :verne.freenode.net), so we
@@ -77,12 +83,15 @@ class Parser(object):
             if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
                 self.commandInstance.user = data[1].split()[0].split('!')[0]
                 self.commandInstance.channel = data[1].split()[2]
-                if data[2].startswith(self.botInstance.operator):
+                if data[2].lower() == '%supdate' % (self.botInstance.operator,):
+                    self.commandInstance.update()
+                elif data[2].startswith(self.botInstance.operator):
                     self.commandInstance.execute(data[2][1:])
         except IndexError:
             pass
     
     def disconnect(self):
+        """Invoke the disconnect command on the Command object."""
         self.commandInstance.disconnect()
     
     @property
