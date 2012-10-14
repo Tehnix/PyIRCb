@@ -95,6 +95,8 @@ class Command(object):
                 getattr(self.commandModules[command], command.title())(self.settingsInstance, self, None)
         except AttributeError:
             self.replyWithMessage("Command '%s' was not found" % (command,))
+        except KeyError:
+            self.replyWithMessage("Command '%s' was not found" % (command,))
         except Exception as e:
             self.replyWithMessage("Exception occured: %s " % (e,))
     

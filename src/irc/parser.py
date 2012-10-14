@@ -71,24 +71,35 @@ class Parser(object):
         if data.startswith("\x01VERSION\x01"):
             self.commandInstance.ctcp()
         if data.startswith(":%s" % self.node):
-            if "376 %s :End of /MOTD command." % (self.settingsInstance.settings['nickname'],) in data:
-                self.commandInstance.joinRooms(self.botInstance.channels)
-            if "* :*** No Ident response" in data:
-                self.commandInstance.ident()
-                self.commandInstance.joinRooms(self.botInstance.channels)
+            self.serverActions(data)
         if data.startswith("ERROR :Closing Link:"):
             raise BreakOutOfLoop
         try:
-            data = data.split(':')
-            if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
-                self.commandInstance.user = data[1].split()[0].split('!')[0]
-                self.commandInstance.channel = data[1].split()[2]
-                if data[2].lower() == '%supdate' % (self.botInstance.operator,):
-                    self.commandInstance.update()
-                elif data[2].startswith(self.botInstance.operator):
-                    self.commandInstance.execute(data[2][1:])
+            self.userActions(data)
         except IndexError:
             pass
+
+    def serverActions(self, data):
+        """Commands invoked by the server."""
+        if "376 %s :End of /MOTD command." % (self.settingsInstance.settings['nickname'],) in data:
+            self.commandInstance.joinRooms(self.botInstance.channels)
+        if "* :*** No Ident response" in data:
+            self.commandInstance.ident()
+            self.commandInstance.joinRooms(self.botInstance.channels)
+
+    def userActions(self, data):
+        """Commands invoked by the user."""
+        data = data.split(':')
+        if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
+            self.commandInstance.user = data[1].split()[0].split('!')[0]
+            self.commandInstance.channel = data[1].split()[2]
+            if data[2].lower() == '%supdate' % (self.botInstance.operator,):
+                self.commandInstance.update()
+            elif data[2].startswith(self.botInstance.operator):
+                self.commandInstance.execute(data[2][1:])
+        elif data[1].split()[1] in ['INVITE']:
+            self.commandInstance.joinRoom(data[2])
+
     
     def disconnect(self):
         """Invoke the disconnect command on the Command object."""
