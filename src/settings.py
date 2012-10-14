@@ -5,29 +5,65 @@ Settings file reader
 
 """
 
-import ast
+import sys
+import json
 
 import src.utilities as util
 
 
+DEFAULT_SETTINGS_PATH = 'pybot.conf'
+DEFAULT_CONF = '{\n\
+    "nickname": "Innocence",\n\
+    "realname": "Motoko Kusanagi",\n\
+    "servers": {\n\
+        "freenode": {\n\
+            "address": "irc.freenode.org",\n\
+            "port": 6697,\n\
+            "channels": [\n\
+                "#python"\n\
+            ],\n\
+            "ssl": true,\n\
+            "identify": false\n\
+        }\n\
+    },\n\
+    "commands": {}\n\
+}'
+
 class Settings(object):
     """Reads the settings file, parses it and converts it into attributes."""
     
-    def __init__(self):
+    def __init__(self, generateConf=False):
         """Set the initial settings file name."""
         super(Settings, self).__init__()
-        try:
-            self.settingsFilePath = 'pybot.conf'
-        except IOError:
-            self.settings = {}
+        if generateConf:
+            self.writeSettingsFile(DEFAULT_CONF, path=DEFAULT_SETTINGS_PATH)
+        else:
+            try:
+                self.settingsFilePath = DEFAULT_SETTINGS_PATH
+            except IOError:
+                self.writeSettingsFile(DEFAULT_CONF, path=DEFAULT_SETTINGS_PATH)
+                util.write(
+                    "No configuration file found, a defualt one has been generated at %s." % (DEFAULT_SETTINGS_PATH,),
+                    priority=9
+                )
+                sys.exit(0)
     
     def reload(self):
         self.readSettingsFile()
 
+    def writeSettingsFile(self, JSON, path=None):
+        """Write the settings file as a JSON object."""
+        if path is not None:
+            settingsFilePath = path
+        else:
+            settingsFilePath = self.settingsFilePath
+        with open(settingsFilePath, 'w') as settingsFile:
+            settingsFile.write(JSON)
+
     def readSettingsFile(self):
         """Read the settings file and convert it to a dict."""
         with open(self.settingsFilePath, 'r') as settingsFile:
-            self.settings = ast.literal_eval(settingsFile.read())
+            self.settings = json.loads(settingsFile.read())
 
     @property
     def settingsFilePath(self):

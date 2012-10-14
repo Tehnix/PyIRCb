@@ -8,9 +8,12 @@ Various utitity methods...
 import inspect
 
 
-def write(text, outputType="*"):
+verbose = False
+
+def write(text, outputType="*", priority=1):
     """Write out the given text."""
-    print("[%s] %s" % (outputType, text,))
+    if verbose or priority > 3:
+        print("[%s] %s" % (outputType, text,))
 
 def toBytes(text):
     """Convert string (unicode) to bytes."""
