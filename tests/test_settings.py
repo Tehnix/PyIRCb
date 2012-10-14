@@ -1,5 +1,5 @@
 """
-Testing src/syncAPI
+Testing src/settings.py
 
 """
 

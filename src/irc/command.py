@@ -106,6 +106,7 @@ class Command(object):
         class variable commandModules.
 
         """
+        self.loadTheModules()
         for name, module in self.commandModules.items():
             imp.reload(module)
 
