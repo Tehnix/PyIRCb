@@ -31,7 +31,10 @@ class Cf(object):
             'z': cfSettings['z'],
             'd': '20'
         }
-        req = urllib.request.Request("https://www.cloudflare.com/api_json.html", data=urllib.parse.urlencode(parameters).encode('UTF-8'))
+        req = urllib.request.Request(
+            "https://www.cloudflare.com/api_json.html", 
+            data=urllib.parse.urlencode(parameters).encode('UTF-8')
+        )
         stats = urllib.request.urlopen(req)
         req = json.loads(stats.read().decode('utf8'))
         traffic = req['response']['result']['objs'][0]['trafficBreakdown']
@@ -46,4 +49,31 @@ class Cf(object):
             views['crawler']
         )
         self.commandInstance.replyWithMessage(parsed)
+
+    def purge(self):
+        """Purge the CloudFlare caches."""
+        cfSettings = self.settingsInstance.settings['commands']['cf']
+        parameters = {
+            'a': 'fpurge_ts',
+            'tkn': cfSettings['tkn'],
+            'email': cfSettings['email'],
+            'z': cfSettings['z'],
+            'v': '1'
+        }
+        req = urllib.request.Request(
+            "https://www.cloudflare.com/api_json.html",
+            data=urllib.parse.urlencode(parameters).encode('UTF-8')
+        )
+        response = urllib.request.urlopen(req)
+        req = json.loads(response.read().decode('utf8'))
+        if req['result'] == 'success':
+            self.commandInstance.replyWithMessage(
+                'Succesfully purged cache for %s' % (cfSettings['z'],)
+            )
+        else:
+            self.commandInstance.replyWithMessage(
+                'Clearing cache for %s returned: %s' % (cfSettings['z'], req['result'],)
+            )
+
+
 
