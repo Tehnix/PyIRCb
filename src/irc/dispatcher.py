@@ -26,7 +26,7 @@ class BotDispatcher(threading.Thread):
     
     botObjects = {}
     
-    def __init__(self, interactive=False):
+    def __init__(self):
         """Prepare the object and fire off the dispatch method."""
         super(BotDispatcher, self).__init__()
         self.settingsInstance = src.settings.Settings()

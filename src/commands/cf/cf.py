@@ -14,21 +14,29 @@ import src.utilities as util
 
 class Cf(object):
     
-    def __init__(self, settingsInstance, commandInstance, cmdName):
+    def __init__(self, settingsInstance, commandInstance, cmdName, *args):
         super(Cf, self).__init__()
         self.settingsInstance = settingsInstance
         self.commandInstance = commandInstance
         if cmdName is not None:
-            getattr(self, cmdName)()
+            if args[0] is not None:
+                getattr(self, cmdName)(*args)
+            else:
+                getattr(self, cmdName)()
     
-    def stats(self):
+    def stats(self, *args):
         """Pull out CloudFlare statistics."""
         cfSettings = self.settingsInstance.settings['commands']['cf']
+        print(args)
+        if args:
+            site = ''.join(args)
+        else:
+            site = cfSettings['z']
         parameters = {
             'a': 'stats',
             'tkn': cfSettings['tkn'],
             'email': cfSettings['email'],
-            'z': cfSettings['z'],
+            'z': site,
             'd': '20'
         }
         req = urllib.request.Request(
@@ -50,14 +58,18 @@ class Cf(object):
         )
         self.commandInstance.replyWithMessage(parsed)
 
-    def purge(self):
+    def purge(self, *args):
         """Purge the CloudFlare caches."""
         cfSettings = self.settingsInstance.settings['commands']['cf']
+        if args:
+            site = ''.join(args)
+        else:
+            site = cfSettings['z']
         parameters = {
             'a': 'fpurge_ts',
             'tkn': cfSettings['tkn'],
             'email': cfSettings['email'],
-            'z': cfSettings['z'],
+            'z': site,
             'v': '1'
         }
         req = urllib.request.Request(

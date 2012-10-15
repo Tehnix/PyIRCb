@@ -46,21 +46,17 @@ class Parser(object):
                 readbuffer = util.toUnicode(self.sock.recv(4096)).split('\r\n')
                 for data in readbuffer:
                     util.write(data)
-                    self._parse(data)
+                    self.parseData(data)
                 time.sleep(0.1)
-            except socket.timeout:
-                break
-            except socket.error:
+            except (socket.timeout, socket.error, BreakOutOfLoop):
+                self.botInstance.server.connect = False
                 break
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(1)
             except UnicodeDecodeError:
                 continue
-            except BreakOutOfLoop:
-                self.botInstance.server.connect = False
-                break
     
-    def _parse(self, data):
+    def parseData(self, data):
         """Parse through the data stream received from the socket."""
         if self.node is None:
             self.node = data.split()[0][1:]
