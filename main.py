@@ -25,14 +25,6 @@ parser.add_option(
     help="generate a default configuration file"
 )
 parser.add_option(
-    "-i",
-    "--interactive",
-    dest="interactive",
-    default=False,
-    action="store_true",
-    help="start an interactive session of the bot"
-)
-parser.add_option(
     "-v",
     "--verbose",
     dest="verbose",
@@ -50,9 +42,7 @@ def main():
             generateConf=options.conf
         )
     else:
-        botDispatcherInstance = src.irc.dispatcher.BotDispatcher(
-            interactive=options.interactive
-        )
+        botDispatcherInstance = src.irc.dispatcher.BotDispatcher()
 
 if __name__ == '__main__':
     main()

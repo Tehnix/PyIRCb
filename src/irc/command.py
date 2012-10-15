@@ -67,15 +67,15 @@ class Command(object):
     
     def sendRawMessage(self, text):
         """Send a raw message to the socket."""
+        text = "%s\r\n" % (text,)
         util.write(text)
-        text = util.toBytes("%s\r\n" % (text,))
-        self.sock.send(text)
+        self.sock.send(util.toBytes(text))
 
     def replyWithMessage(self, text, msgType='PRIVMSG'):
         """Send a message to the channel from which we received the command."""
+        text = "%s %s :%s\r\n" % (msgType, self.channel, text,)
         util.write(text)
-        text = util.toBytes("%s %s :%s\r\n" % (msgType, self.channel, text,))
-        self.sock.send(text)
+        self.sock.send(util.toBytes(text))
     
     def execute(self, command):
         """
@@ -85,20 +85,61 @@ class Command(object):
         the __init__ of the class, which then executes the method.
 
         """
-        util.write("Executing %s" % (command,))
-        cmd = command.split('.')
+        cmd = self.splitCommand(command)
+        util.write("Executing %s.%s with args: %s" % (cmd[0], cmd[1], cmd[2],))
         try:
-            if len(cmd) > 1:
-                if not cmd[1].startswith('_'):
-                    getattr(self.commandModules[cmd[0]], cmd[0].title())(self.settingsInstance, self, cmd[1])
+            if cmd[1] is None:
+                publicMethods = util.publicMethods(
+                    getattr(
+                        self.commandModules[cmd[0]], 
+                        cmd[0].title()
+                    )
+                )
+                self.replyWithMessage(
+                    "%s: %s" % (command.title(), publicMethods)
+                )
+            elif not cmd[1].startswith('_'):
+                getattr(
+                    self.commandModules[cmd[0]],
+                    cmd[0].title()
+                )(self.settingsInstance, self, cmd[1], cmd[2])
             else:
-                getattr(self.commandModules[command], command.title())(self.settingsInstance, self, None)
-        except AttributeError:
-            self.replyWithMessage("Command '%s' was not found" % (command,))
-        except KeyError:
-            self.replyWithMessage("Command '%s' was not found" % (command,))
+                self.replyWithMessage(
+                    "Methods starting with _ are private methods!"
+                )
+        except (AttributeError, KeyError):
+            if cmd[1] is not None:
+                self.replyWithMessage(
+                    "Command %s.%s was not found" % (cmd[0], cmd[1],)
+                )
+            else:
+                self.replyWithMessage(
+                    "Module '%s' was not found" % (cmd[0],)
+                )
         except Exception as e:
             self.replyWithMessage("Exception occured: %s " % (e,))
+    
+    def splitCommand(self, command):
+        """
+        Split the command up into three parts at three indexes:
+            0: class name
+            1: method name
+            2: arguments
+        and return it.
+        
+        """
+        cmd = [None, None, None]
+        if '.' in command:
+            tCmd = command.split('.')
+            cmd[0] = tCmd[0].lower()
+            tCmd[1] = '.'.join(tCmd[1:])
+            cmd[1] = tCmd[1]
+            if ' ' in tCmd[1]:
+                cmd[1] = tCmd[1].split(' ')[0]
+                cmd[2] = ' '.join(tCmd[1].split(' ')[1:])
+        else:
+            cmd[0] = command.lower()
+        return cmd
     
     def update(self):
         """
@@ -122,15 +163,5 @@ class Command(object):
             full_pkg_name = 'src.commands.%s.%s' % (package_name, package_name)
             if full_pkg_name not in sys.modules:
                 module = importlib.import_module(full_pkg_name)
-                self.commandModules[package_name] = module
-    
-    @property
-    def sock(self):
-        """Getter for the _sock attribute."""
-        return self._sock
-
-    @sock.setter
-    def sock(self, value):
-        """Getter for the _sock attribute."""
-        self._sock = value
+                self.commandModules[package_name.lower()] = module
         

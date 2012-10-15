@@ -12,7 +12,7 @@ verbose = False
 
 def write(text, outputType="*", priority=1):
     """Write out the given text."""
-    if verbose or priority > 3:
+    if verbose and text != "" or priority > 3 and text != "":
         print("[%s] %s" % (outputType, text,))
 
 def toBytes(text):
@@ -40,3 +40,24 @@ def getDocstring(targetFunc, targetClass=None):
     if targetClass is None:
         return inspect.cleandoc(inspect.getdoc(targetFunc))
     return inspect.cleandoc(inspect.getdoc(getattr(targetClass, targetFunc)))
+
+def publicMethods(targetClass):
+    """Construct a list of all the commands"""
+    cmdList = []
+    # These are common to the class, but we do not need them
+    cmdListIgnores = [
+        "daemon", "getName",
+        "ident", "is_alive",
+        "isAlive", "isDaemon",
+        "join", "name",
+        "run", "setDaemon",
+        "setName", "start"
+    ]
+    classMembers = inspect.getmembers(targetClass)
+    for i in range(len(classMembers)):
+        method = classMembers[i][0]
+        if not method.startswith("_") and method not in cmdListIgnores:
+            cmdList.append(method)
+    # Sort the command list alphabetically
+    cmdList.sort(key=lambda x: x.lower())
+    return ', '.join(cmdList)
