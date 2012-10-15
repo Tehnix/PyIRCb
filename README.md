@@ -4,31 +4,29 @@ An easily extensible IRC bot written in python 3.
 ---
 
 ###Configuration
-The configuration file is structured as a python dictionary.
+The configuration file uses JSON. You can create a default configuration file by running the program with the -c parameter.
 
 The following is an example of a configuration file. The config file should be placed in the root directory of the bot (i.e. the same directory as the src folder is placed in).
 <pre>
 {
-    'nickname': 'PyBot',
-    'realname': 'PyBot',
-    'servers': {
-        'freenode': {
-            'address': 'irc.freenode.org',
-            'port': 6697,
-            'ssl': True,
-            'identify': False,
-            'channels': [
-                '#python'
-            ]
+    "nickname": "PyBot", 
+    "realname": "PyBot",  
+    "servers": {
+        "freenode": {
+            "address": "irc.freenode.org",
+            "port": 6697,
+            "ssl": true, 
+            "identify": false,
+            "channels": ["#python"]
         }
     },
-    'commands': {
-        'cf': {
-            'tkn': 'cloudflare token',
-            'email': 'cloudflare email',
-            'z': 'website domain name'
+    "commands": {
+        "cf": {
+            "tkn": "cloudflare token", 
+            "z": "site", 
+            "email": "email"
         }
-    } 
+    }
 }
 </pre>
 
