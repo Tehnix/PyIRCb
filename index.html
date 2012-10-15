@@ -8,34 +8,60 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
 
-    <title>T3hb0t (Motoko) by ZealDev</title>
+    <title>PyBot by Tehnix</title>
   </head>
 
   <body>
 
     <header>
       <div class="container">
-        <h1>T3hb0t (Motoko)</h1>
+        <h1>PyBot</h1>
         <h2>A python based IRC bot</h2>
 
         <section id="downloads">
-          <a href="https://github.com/ZealDev/T3hb0t/zipball/master" class="btn">Download as .zip</a>
-          <a href="https://github.com/ZealDev/T3hb0t/tarball/master" class="btn">Download as .tar.gz</a>
-          <a href="https://github.com/ZealDev/T3hb0t" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+          <a href="https://github.com/Tehnix/PyBot/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/Tehnix/PyBot/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/Tehnix/PyBot" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
         </section>
       </div>
     </header>
 
     <div class="container">
       <section id="main_content">
-        <h2>Information / README / Documentation / Installation</h2>
+        <h1>PyBot</h1>
 
-<h4>0x01        Intro</h4>
+<p>An easily extensible IRC bot written in python 3.</p>
 
-<p>T3hb0t is an IRC bot client capable of connecting to multiple servers
-and channels. Easily customized and easy to add commands.</p>
+<hr><h3>Configuration</h3>
 
-<h4>0x02        License</h4>
+<p>The configuration file uses JSON. You can create a default configuration file by running the program with the <code>-c</code> parameter.</p>
+
+<p>The following is an example of a configuration file. The config file should be placed in the root directory of the bot (i.e. the same directory as the src folder is placed in).</p>
+
+<pre>
+{
+    "nickname": "PyBot", 
+    "realname": "PyBot",  
+    "servers": {
+        "freenode": {
+            "address": "irc.freenode.org",
+            "port": 6697,
+            "ssl": true, 
+            "identify": false,
+            "channels": ["#python"]
+        }
+    },
+    "commands": {
+        "cf": {
+            "tkn": "cloudflare token", 
+            "z": "site", 
+            "email": "email"
+        }
+    }
+}
+</pre>
+
+<hr><h3>License</h3>
 
 <p>Is found in the license file. But also here:</p>
 
@@ -65,53 +91,6 @@ and channels. Easily customized and easy to add commands.</p>
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 </pre>
-
-<h4>0x03        Installation</h4>
-
-<p>Clone the repository</p>
-
-<p><code>$ git clone <a href="mailto:git@github.com">git@github.com</a>:ZealDev/T3hb0t.git</code></p>
-
-<hr><h2>Files &amp; Usage</h2>
-
-<h4>1x01        commands_list.py</h4>
-
-<p>This is the file where you put all your commands. All public methods (without a _ infront) will be available through the bot by doing: 
-<code>$methodName &lt;arg1&gt; &lt;arg2&gt; .</code>
-All private methods (with _ infront of method name) will not be accessible through the bot, but will ofcourse be accessible in the class.</p>
-
-<p>The commands usage is documented in the docstring of the method. This is then used when you do $help to get a list of commands and how to use them.</p>
-
-<p>Standard commands are:</p>
-
-<p><code>$help</code></p>
-
-<p>Outputs the available commands and their usage.</p>
-
-<p><code>$note : Usage: note &lt;to nickname&gt; &lt;note&gt;</code></p>
-
-<p>If &lt;to nickname&gt; &lt;note&gt; is supplied, it saves a note to the given nickname.
-If &lt;to nickname&gt; &lt;note&gt; is omitted, it lists out all notes that are not set to 'read'.</p>
-
-<p><code>$notelist : Usage: notelist</code></p>
-
-<p>Outputs a list of all notes with their corresponding id's.</p>
-
-<p><code>$noteread : Usage: noteread &lt;id&gt;</code></p>
-
-<p>Gives a note the status of 'read', so it doesn't show in $note.</p>
-
-<p><code>$backin : Usage: backin &lt;time&gt;</code></p>
-
-<p>Saves a your expected time of return. Used like this: </p>
-
-<p><code>$backin 2.5h</code> (for 2 and a half hours)</p>
-
-<p><code>$backin 30m</code> (for 30 minutes)</p>
-
-<p><code>$back : Usage: back &lt;nickname&gt;</code></p>
-
-<p>Outputs when the given nickname (person) will be back (if the person saved it with $backin).</p>
       </section>
     </div>
 
