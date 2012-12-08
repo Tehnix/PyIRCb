@@ -6,7 +6,7 @@ Git commands!
 """
 
 import os
-import disutils
+#import disutils
 import urllib
 import shutil
 
@@ -54,4 +54,5 @@ class Git(object):
         urllib.urlretrieve(url, packedname)
         unpackfile(packedname, tmp_path)
         newdir = os.listdir(tmp_path)
-        distutils.file_util.copy_file(newdir, self.def_dir)
+        #distutils.file_util.copy_file(newdir, self.def_dir)
+
