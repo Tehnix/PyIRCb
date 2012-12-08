@@ -21,9 +21,14 @@ class User(object):
             else:
                 getattr(self, cmdName)()
     
-    def test(self):
+    def testuser(self):
         self.commandInstance.replyWithMessage(
             self.commandInstance.user
+        )
+
+    def testchannel(self):
+        self.commandInstance.replyWithMessage(
+            self.commandInstance.channel
         )
 
     def users(self):
