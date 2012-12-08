@@ -21,14 +21,13 @@ class User(object):
             else:
                 getattr(self, cmdName)()
     
-    def testing(self):
-        self.commandInstance.replyWithMessage(':D !')
-
-    def say(self, *args):
-        self.commandInstance.replyWithMessage(' '.join(args))
+    def test(self):
+        self.commandInstance.replyWithMessage(
+            self.commandInstance.user
+        )
 
     def users(self):
-        """Something"""
+        """Get a list of users in the users group."""
         self.commandInstance.replyWithMessage(self._users())
 
     def _users(self, output='string'):
