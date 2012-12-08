@@ -7,7 +7,8 @@ Git commands!
 
 import os
 #import disutils
-import urllib
+import urllib.request, urllib.parse, urllib.error
+import tempfile
 import shutil
 
 
@@ -16,6 +17,7 @@ def unpackfile(filepath, path):
     zfile.extractall(path)
     zfile.close()
     
+
 class TempFolder(object):
     def __enter__(self):
         self.path = tempfile.mkdtemp()
@@ -24,7 +26,6 @@ class TempFolder(object):
     def __exit__(self, type, value, traceback):
         shutil.rmtree(self.path)
         
-
 
 class Git(object):
 
@@ -49,10 +50,10 @@ class Git(object):
             return
         s = url[17:]
         utl = "https://nodeload.github.com%s/zip/master" % s
-    with TempFolder() as tmp_path:
-        packedname = tmp_path + "/tmp.zip"
-        urllib.urlretrieve(url, packedname)
-        unpackfile(packedname, tmp_path)
-        newdir = os.listdir(tmp_path)
-        #distutils.file_util.copy_file(newdir, self.def_dir)
+        with TempFolder() as tmp_path:
+            packedname = tmp_path + "/tmp.zip"
+            urllib.request.urlretrieve(url, packedname)
+            unpackfile(packedname, tmp_path)
+            newdir = os.listdir(tmp_path)
+            #distutils.file_util.copy_file(newdir, self.def_dir)
 
