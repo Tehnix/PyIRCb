@@ -26,7 +26,7 @@ class Git(object):
         cmd = ["git", "pull", "origin", "master"]
         #for i in args:
         #    cmd.append(i)
-        p = subprocess.Popen(cmd, cwd="/home/tenshi/PyBot", shell=True, stdout=subprocess.PIPE)
+        p = subprocess.Popen(cmd, cwd="/home/tenshi/PyBot", stdout=subprocess.PIPE)
         self.commandInstance.replyWithMessage(p.stdout.read())
         
     
