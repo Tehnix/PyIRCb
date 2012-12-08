@@ -26,8 +26,8 @@ class Git(object):
             cmd = ["git", "clone", args[0]]
             path = ' '.join(args[1:])
             self.commandInstance.replyWithMessage(path)
-            p = subprocess.Popen(cmd, cwd=path, stdout=subprocess.PIPE)
-            self.commandInstance.replyWithMessage(p.stdout.read())
+            #p = subprocess.Popen(cmd, cwd=path, stdout=subprocess.PIPE)
+            #self.commandInstance.replyWithMessage(p.stdout.read())
         except IndexError:
             self.commandInstance.replyWithMessage(
                 "Usage: git.clone <repository> <absolute path to dir>"
