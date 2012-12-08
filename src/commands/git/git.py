@@ -20,9 +20,20 @@ class Git(object):
                 getattr(self, cmdName)()
 
     def clone(self, *args):
-        pass
+        """Clone a repository into a directory. Usage git.clone <repository> <absolute path to dir> ."""
+        path = None
+        if args[1]:
+            cmd = ["git", "clone", args[0]]
+            path = ' '.join(args[1:])
+            p = subprocess.Popen(cmd, cwd=path, stdout=subprocess.PIPE)
+            self.commandInstance.replyWithMessage(p.stdout.read())
+        else:
+            self.commandInstance.replyWithMessage(
+                "Usage: git.clone <repository> <absolute path to dir>"
+            )
 
     def pull(self, *args):
+        """Pull down updates. Usage: git.pull [absolute path to dir] ."""
         cmd = ["git", "pull", "origin", "master"]
         path = None
         if args:
