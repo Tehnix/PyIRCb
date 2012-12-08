@@ -37,9 +37,12 @@ def toUnicode(text):
 
 def getDocstring(targetFunc, targetClass=None):
     """Fetches the docstring of the given function/method."""
-    if targetClass is None:
-        return inspect.cleandoc(inspect.getdoc(targetFunc))
-    return inspect.cleandoc(inspect.getdoc(getattr(targetClass, targetFunc)))
+    try:
+        if targetClass is None:
+            return inspect.cleandoc(inspect.getdoc(targetFunc))
+        return inspect.cleandoc(inspect.getdoc(getattr(targetClass, targetFunc)))
+    except AttributeError:
+        return "A docstring couldn't be found!"
 
 def publicMethods(targetClass):
     """Construct a list of all the commands"""
