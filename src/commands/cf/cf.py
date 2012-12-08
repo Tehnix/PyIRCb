@@ -13,7 +13,10 @@ import json
 import src.utilities as util
 
 class Cf(object):
-    
+    """
+    Interact with the CloudFlare API.
+    """    
+
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
         super(Cf, self).__init__()
         self.settingsInstance = settingsInstance
