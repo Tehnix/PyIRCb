@@ -88,6 +88,7 @@ class Command(object):
         cmd = self.splitCommand(command)
         util.write("Executing %s.%s with args: %s" % (cmd[0], cmd[1], cmd[2],))
         try:
+            # If there is only a module (ie $test)
             if cmd[1] is None:
                 publicMethods = util.publicMethods(
                     getattr(
@@ -98,6 +99,8 @@ class Command(object):
                 self.replyWithMessage(
                     "%s: %s" % (command.title(), publicMethods)
                 )
+            # If there is also a method on the module, and it isn't a private
+            # method (ie $test.testing)
             elif not cmd[1].startswith('_'):
                 getattr(
                     self.commandModules[cmd[0]],
@@ -141,6 +144,54 @@ class Command(object):
             cmd[0] = command.lower()
         return cmd
     
+    def help(self, command):
+        """
+        Look up the docstring for a given module or method from a module.
+        """
+        command = command[5:]
+        cmd = self.splitCommand(command)
+        util.write("Finding docstring for %s.%s" % (cmd[0], cmd[1]))
+        try:
+            # If there is only a module (ie $test)
+            if cmd[1] is None:
+                docString = util.getDocstring(
+                    getattr(
+                        self.commandModules[cmd[0]], 
+                        cmd[0].title()
+                    )
+                )
+                self.replyWithMessage(
+                    "%s: %s" % (command.title(), docString)
+                )
+            # If there is also a method on the module, and it isn't a private
+            # method (ie $test.testing)
+            elif not cmd[1].startswith('_'):
+                docString = util.getDocstring(
+                    cmd[1],
+                    targetClass=getattr(
+                    self.commandModules[cmd[0]],
+                    cmd[0].title()
+                    )
+                )
+                self.replyWithMessage(
+                    "%s.%s: %s" % (cmd[0].title(), cmd[1], docString)
+                )
+            else:
+                self.replyWithMessage(
+                    "Docstring: Methods starting with _ are private methods!"
+                )
+        except (AttributeError, KeyError):
+            if cmd[1] is not None:
+                self.replyWithMessage(
+                    "Docstring: Command %s.%s was not found" % (cmd[0], cmd[1],)
+                )
+            else:
+                self.replyWithMessage(
+                    "Docstring: Module '%s' was not found" % (cmd[0],)
+                )
+        except Exception as e:
+            self.replyWithMessage("Docstring: Exception occured: %s " % (e,))
+
     def update(self):
         """
         Reload all the command modules previously imported and saved to the
@@ -150,6 +201,7 @@ class Command(object):
         self.loadTheModules()
         for name, module in self.commandModules.items():
             imp.reload(module)
+        self.replyWithMessage("Modules have been updated!")
 
     def loadTheModules(self):
         """

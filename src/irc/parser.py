@@ -91,6 +91,8 @@ class Parser(object):
             self.commandInstance.channel = data[1].split()[2]
             if data[2].lower() == '%supdate' % (self.botInstance.operator,):
                 self.commandInstance.update()
+            elif data[2].startswith('%shelp' % (self.botInstance.operator,)):
+                self.commandInstance.help(data[2][1:])
             elif data[2].startswith(self.botInstance.operator):
                 self.commandInstance.execute(data[2][1:])
         elif data[1].split()[1] in ['INVITE']:
