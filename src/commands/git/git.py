@@ -23,12 +23,10 @@ class Git(object):
         """Clone a repository into a directory. Usage git.clone <repository> <absolute path to dir> ."""
         path = None
         try:
-            cmd = ["git", "clone", args[0]]
-            path = ' '.join(args[1:])
-            self.commandInstance.replyWithMessage(args)
-            self.commandInstance.replyWithMessage(path)
-            #p = subprocess.Popen(cmd, cwd=path, stdout=subprocess.PIPE)
-            #self.commandInstance.replyWithMessage(p.stdout.read())
+            path = ' '.join(args.split()[1])
+            cmd = ["git", "clone", args.split()[0], path]
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            self.commandInstance.replyWithMessage(p.stdout.read())
         except IndexError:
             self.commandInstance.replyWithMessage(
                 "Usage: git.clone <repository> <absolute path to dir>"
