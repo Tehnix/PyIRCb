@@ -24,9 +24,9 @@ class Git(object):
 
     def pull(self, *args):
         cmd = ["git", "pull", "origin", "master"]
-        for i in args:
-            cmd.append(i)
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        #for i in args:
+        #    cmd.append(i)
+        p = subprocess.Popen(cmd, cwd="/home/tenshi/PyBot", shell=True, stdout=subprocess.PIPE)
         self.commandInstance.replyWithMessage(p.stdout.read())
         
     
