@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+
 User command...
 
 """
 
-from src.irc.database import Database
+from src.database import Database
 
 class user(object):
     
