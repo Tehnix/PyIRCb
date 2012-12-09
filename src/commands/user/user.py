@@ -74,21 +74,21 @@ class User(object):
         args = args[0].split()
         user, projectName, path = args
         search = {"nickname": user}
-        res = self.db.fetchone(table="users", filter=search)
+        res = self.db.fetchone(table="users", filters=search)
         userid = res[0]
         data = {"userID": userid, "name": projectName, "dir": path}
-        self.db.insert(table="projects", filter=data)
+        self.db.insert(table="projects", filtes=data)
 
     def printUser(self, *args):
         """$user.printUser (user)"""
         args = args[0].split()
         search = {"nickname": args[0]}
-        res = self.db.fetchone(table="users", filter=search)
+        res = self.db.fetchone(table="users", filters=search)
         self.commandInstance.replyWithMessage(res)
 
     def printProject(self, *args):
         """$user.printProject (project)"""
         args = args[0].split()
         search = {"name": args[0]}
-        res = self.db.fetchone(table="projects", filter=search)
+        res = self.db.fetchone(table="projects", filters=search)
         self.commandInstance.replyWithMessage(res)
