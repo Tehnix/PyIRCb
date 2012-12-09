@@ -75,7 +75,6 @@ class Command(object):
     def replyWithMessage(self, text, msgType=None):
         """Send a message to the channel from which we received the command."""
         recipient = self.user
-        print("los user!!: " + self.user)
         if self.channel.startswith("#"):
             recipient = self.channel
         if msgType is None:
