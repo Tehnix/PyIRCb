@@ -14,11 +14,14 @@ src/*.pyc
 src/irc/*.pyc
 src/commands/*.pyc
 
+*.swo
+
 *.swp
 src/*.swp
 src/irc/*.swp
 src/commands/*.swp
 
+*__pycache__
 __pycache__/*
 src/__pycache__/*
 src/irc/__pycache__/*
