@@ -85,15 +85,39 @@ class User(object):
                 "No user with nickname '%s' was found :(" % (username,)
             )
 
+    def isLoggedIn(self, *args):
+        """Check if a user is logged in. Usage: user.isLoggedIn <user>."""
+        if self._isLoggedIn(*args):
+            self.commandInstance.replyWithMessage(
+                "%s is logged in." % (args[0],)
+            )
+        else:
+            self.commandInstance.replyWithMessage(
+                "%s is *not* logged in." % (args[0],)
+            )
+
+    def _isLoggedIn(self, *args):
+        global loggedInUsers
+        if args[0] in loggedInUsers:
+            return True
+        return False
 
     def add(self, *args):
         """Add a user to the database. Usage: user.add <name> <password>."""
         user, password = args[0].split()
-        self.commandInstance.replyWithMessage("Creating user %s" % (user,))
-        self._add(*args)
+        if self._add(*args):
+            self.commandInstance.replyWithMessage(
+                "Added user '%s' to the system :)" % (user,)
+            )
+        else:
+            self.commandInstance.replyWithMessage(
+                "User '%s' already exists in the system D: ..." % (user,)
+            )
 
     def _add(self, *args):
         nickname, password = util.toBytes(args[0]).split()
+        if self._getUser(nickname) is not None:
+            return False
         password = hashlib.sha256(password).hexdigest()
         self.db.insert(
             table='users', 
@@ -103,6 +127,7 @@ class User(object):
                 'server': self.commandInstance.server
             }
         )
+        return True
             
     def rm(self, *args):
         """Remove a user from the database. Usage: user.rm <username>."""
