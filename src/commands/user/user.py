@@ -174,7 +174,7 @@ class User(object):
     def printUsers(self, *args):
         args = util.toBytes(args[0]).split()
         self.commandInstance.replyWithMessage(
-            "%s : %s : %s" % (self.commandInstance.user, args[0], (self.commandInstance.user == args[0]))
+            "%s : %s : %s" % (util.toBytes(self.commandInstance.user), args[0], (util.toBytes(self.commandInstance.user) == args[0]))
         )
         res = self.db.fetchall(
             table='users', 
