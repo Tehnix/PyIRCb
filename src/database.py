@@ -1,35 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Copyright (c) 2012, Christian Kjær Laustsen (Tehnix)
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
--------------------------------------------------------------------------------
-
 Database abstraction layer. Simplyfies database
 handling a bit.
+
+An example of common usecase could be as such:
+
+# Import the module
+from databaselayer import database
+
+# Create the database
+myDB = database.Database('SQLite', 'database.sql')
+# Create a table
+myDB.execute(
+    'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT)'
+)
+# Insert a few people in the users table
+myDB.insert('users', {'username': 'John'})
+myDB.insert('users', {'username': 'Tom'})
+
 
 """
 
@@ -53,11 +42,20 @@ except ImportError:
 
 
 class Database(threading.Thread):
-    """Higher level database abstraction layer.
+    """
+    Higher level database abstraction layer.
     
     Provides a database abstraction layer, for easy use with
     multiple different database types, without the need to
-    think about SQL differences.
+    think about SQL differences. If you want to execute raw SQL, 
+    you can use the execute method.
+    
+    Throughout the class, a lot of methods take in a filter argument. 
+    The filter is in the format of {'field': 'value'}. The data
+    argument follows the same syntax.
+    
+    The add argument is to add additional raw SQL to a constructed 
+    query (e.g. add="ORDER BY time").
     
     """
     
