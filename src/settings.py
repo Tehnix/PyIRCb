@@ -17,6 +17,7 @@ DEFAULT_CONF = '{\n\
     "realname": "Motoko Kusanagi",\n\
     "servers": {\n\
         "freenode": {\n\
+            "admins": [],\n\
             "address": "irc.freenode.org",\n\
             "port": 6697,\n\
             "channels": [\n\

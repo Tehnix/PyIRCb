@@ -15,6 +15,7 @@ class Server(object):
         self.address = None
         self.port = 6667
         self.ssl = False
+        self.admins = []
         self.handleInfo(info)
         
     def handleInfo(self, info):
@@ -28,6 +29,10 @@ class Server(object):
             pass
         try:
             self.port = int(info['port'])
+        except KeyError:
+            pass
+        try:
+            self.admins = info['admins']
         except KeyError:
             pass
     

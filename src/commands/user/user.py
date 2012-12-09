@@ -30,7 +30,7 @@ class User(object):
                 getattr(self, cmdName)(*args)
             else:
                 getattr(self, cmdName)()
-    
+
     def users(self):
         """Get a list of users in the users group."""
         self.commandInstance.replyWithMessage(self._users())
@@ -43,6 +43,36 @@ class User(object):
             return members
         else:
             return ', '.join(members)
+
+    def _getUid(self, username):
+        """Get the id of a specific user."""
+        res = self.db.fetchone(
+            table='users', 
+            filters={
+                'nickname': username,
+                'server': self.commandInstance.server
+            }
+        )
+        return res[0]
+
+    def identify(self, *args):
+        """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
+        password = hashlib.sha256(args[0]).hexdigest()
+        filters = {
+            "nickname": self.commandInstance.user,
+            "password": password,
+            "server": self.commandInstance.server
+        }
+        res = self.db.fetchone(table='users', filters=filters)
+        if res is not None:
+            self.commandInstance.replyWithMessage(
+                "You're now logged in!"
+            )
+        else:
+            self.commandInstance.replyWithMessage(
+                "Wrong user/password!"
+            )
+
 
     def add(self, *args):
         """Add a user to the database. Usage: user.add <name> <password>."""
@@ -82,17 +112,10 @@ class User(object):
     def _rmProject(self, *args):
         args = toBytes(args[0]).split()
         user, projectName = args
-        res = self.db.fetchone(
-            table="users", 
-            filters={
-                'nickname': user,
-                'server': self.commandInstance.server
-            }
-        )
         self.db.delete(
             table="projects", 
             filters={
-                'userId': res[0],
+                'userId': self._getUid(user),
                 'name': projectName
             }
         )
@@ -106,14 +129,10 @@ class User(object):
     def _addProject(self, *args):
         args = toBytes(args[0]).split()
         user, projectName, path = args
-        res = self.db.fetchone(
-            table="users", 
-            filters={'nickname': user}
-        )
         self.db.insert(
             table="projects", 
             data={
-                "userID": res[0], 
+                "userID": self._getUid(user), 
                 "name": projectName, 
                 "dir": path
             }
@@ -146,16 +165,9 @@ class User(object):
         args = toBytes(args[0]).split()
         user, projectName = args
         res = self.db.fetchone(
-            table='users', 
-            filters={
-                'nickname': user,
-                'server': self.commandInstance.server
-            }
-        )
-        res = self.db.fetchone(
             table="projects", 
             filters={
-                'userId': res[0],
+                'userId': self._getUid(user),
                 'name': projectName
             }
         )
