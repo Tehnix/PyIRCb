@@ -28,7 +28,7 @@ class Command(object):
         self.running = False
         self.loadTheModules()
         self.user = ""
-        self.recipient = ""
+        self.channel = ""
         self.msgType = "PRIVMSG"
     
     def pong(self, data):
@@ -74,10 +74,13 @@ class Command(object):
 
     def replyWithMessage(self, text, msgType=None):
         """Send a message to the channel from which we received the command."""
+        recipient = self.user
+        if self.channel.startswith("#"):
+            recipient = self.channel
         if msgType is None:
             msgType = self.msgType
         for txt in text.split("\n"):
-            txt = "%s %s :%s\r\n" % (msgType, self.recipient, txt,)
+            txt = "%s %s :%s\r\n" % (msgType, recipient, txt,)
             util.write(txt)
             self.sock.send(util.toBytes(txt))
     
