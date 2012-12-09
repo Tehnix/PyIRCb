@@ -9,6 +9,7 @@ User command...
 from src.irc.database import Database
 
 class user(object):
+    
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
         super(user, self).__init__()
         self.settingsInstance = settingsInstance
@@ -22,6 +23,32 @@ class user(object):
         self.db.execute(sql="""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)""")
         self.db.execute(sql="""CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)""")
     
+<<<<<<< HEAD
+=======
+    def testuser(self):
+        self.commandInstance.replyWithMessage(
+            self.commandInstance.user
+        )
+
+    def testchannel(self):
+        self.commandInstance.replyWithMessage(
+            self.commandInstance.channel
+        )
+
+    def users(self):
+        """Get a list of users in the users group."""
+        self.commandInstance.replyWithMessage(self._users())
+
+    def _users(self, output='string'):
+        for group in grp.getgrall():
+            if group.gr_name == 'users':
+                members = group.gr_mem
+        if output == 'list':
+            return members
+        else:
+            return ', '.join(members)
+
+>>>>>>> dc0a4bc92bef06a2e427092ca0bfe30a9aba213a
     def add(self, *args):
         """$user.add (user password server)"""
         data = {"nickname": args[0],
