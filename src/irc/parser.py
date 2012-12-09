@@ -91,8 +91,12 @@ class Parser(object):
             self.commandInstance.user = data[1].split()[0].split('!')[0]
             self.commandInstance.channel = data[1].split()[2]
             self.commandInstance.msgType = data[1].split()[1]
-            if data[2].lower() == '%supdate' % (self.botInstance.operator,):
-                self.commandInstance.update()
+            if data[2].lower().startswith('%supdate' % (self.botInstance.operator,)):
+                update = cmd.lower().split()
+                try:
+                    self.commandInstance.update(update[1])
+                except IndexError:
+                    self.commandInstance.update()
             elif data[2].startswith('%shelp' % (self.botInstance.operator,)):
                 self.commandInstance.help(cmd)
             elif data[2].startswith(self.botInstance.operator):
