@@ -86,7 +86,7 @@ class Parser(object):
     def userActions(self, data):
         """Commands invoked by the user."""
         data = data.split(':')
-        cmd = ':'.join(data[1:])[1:]
+        cmd = ':'.join(data[2:])[1:]
         if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
             self.commandInstance.user = data[1].split()[0].split('!')[0]
             self.commandInstance.channel = data[1].split()[2]
