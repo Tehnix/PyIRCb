@@ -6,6 +6,7 @@ User command...
 
 """
 
+import grp
 from src.database import Database
 from src.utilities import toBytes, write
 
@@ -86,11 +87,12 @@ class User(object):
         search = {"nickname": args[0]}
         res = self.db.fetchone(table="users", filters=search)
         write(res)
-        self.commandInstance.replyWithMessage(res)
+        self.commandInstance.replyWithMessage(res[1])
 
     def printProject(self, *args):
         """$user.printProject (project)"""
         args = toBytes(args[0]).split()
         search = {"name": args[0]}
         res = self.db.fetchone(table="projects", filters=search)
-        self.commandInstance.replyWithMessage(res)
+        self.commandInstance.replyWithMessage(res[2] + " : " + res[3])
+
