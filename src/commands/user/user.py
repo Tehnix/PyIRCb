@@ -8,10 +8,10 @@ User command...
 
 from src.database import Database
 
-class user(object):
+class User(object):
     
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
-        super(user, self).__init__()
+        super(User, self).__init__()
         self.settingsInstance = settingsInstance
         self.commandInstance = commandInstance
         if cmdName is not None:
