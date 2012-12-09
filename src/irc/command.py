@@ -212,7 +212,7 @@ class Command(object):
             if mod is None or name == mod:
                 imp.reload(module)
                 moduleNotFound = False
-        if moduleFound:
+        if moduleNotFound: 
             self.replyWithMessage("Modules have been updated!")
         else:
             self.replyWithMessage("No module named %s." % (mod,))
