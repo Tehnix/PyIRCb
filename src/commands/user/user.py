@@ -77,7 +77,7 @@ class User(object):
         res = self.db.fetchone(table="users", filters=search)
         userid = res[0]
         data = {"userID": userid, "name": projectName, "dir": path}
-        self.db.insert(table="projects", filtes=data)
+        self.db.insert(table="projects", data=data)
 
     def printUser(self, *args):
         """$user.printUser (user)"""
