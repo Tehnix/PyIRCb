@@ -7,6 +7,7 @@ User command...
 """
 
 from src.database import Database
+from src.utilities import toBytes
 
 class User(object):
     
@@ -49,7 +50,7 @@ class User(object):
     def add(self, *args):
         """$user.add (user password server)"""
         self.commandInstance.replyWithMessage(" ".join(args))
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         data = {"nickname": args[0],
                 "password": args[1],
                 "server": args[2]}
@@ -58,20 +59,20 @@ class User(object):
     def rmrf(self, *args):
         """$user.rmrf (user)
         INB4 worst idea ever."""
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         data = {"nickname": args[0]}
         self.db.delete(table="users", filters=data)
         
     def rmrfProject(self, *args):
         """$user.rmrf (user)
         INB4 worst idea ever."""
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         data = {"name": args[0]}
         self.db.delete(table="projects", filters=data)
     
     def addProject(self, *args):
         """$user.addProject (user projectName path)"""
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         user, projectName, path = args
         search = {"nickname": user}
         res = self.db.fetchone(table="users", filters=search)
@@ -81,14 +82,14 @@ class User(object):
 
     def printUser(self, *args):
         """$user.printUser (user)"""
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         search = {"nickname": args[0]}
         res = self.db.fetchone(table="users", filters=search)
         self.commandInstance.replyWithMessage(res)
 
     def printProject(self, *args):
         """$user.printProject (project)"""
-        args = args[0].split()
+        args = toBytes(args[0]).split()
         search = {"name": args[0]}
         res = self.db.fetchone(table="projects", filters=search)
         self.commandInstance.replyWithMessage(res)
