@@ -6,9 +6,11 @@ User command...
 
 """
 
+import hashlib
 import grp
 from src.database import Database
 from src.utilities import toBytes, write
+
 
 class User(object):
     
@@ -17,24 +19,18 @@ class User(object):
         self.settingsInstance = settingsInstance
         self.commandInstance = commandInstance
         self.db = Database(dbtype="SQLite", dbname="database.db")
-        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)""")
-        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)""")
+        self.db.execute(
+            'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)'
+        )
+        self.db.execute(
+            'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)'
+        )
         if cmdName is not None:
             if args[0] is not None:
                 getattr(self, cmdName)(*args)
             else:
                 getattr(self, cmdName)()
     
-    def testuser(self):
-        self.commandInstance.replyWithMessage(
-            self.commandInstance.user
-        )
-
-    def testchannel(self):
-        self.commandInstance.replyWithMessage(
-            self.commandInstance.channel
-        )
-
     def users(self):
         """Get a list of users in the users group."""
         self.commandInstance.replyWithMessage(self._users())
@@ -49,50 +45,118 @@ class User(object):
             return ', '.join(members)
 
     def add(self, *args):
-        """$user.add (user password server)"""
-        self.commandInstance.replyWithMessage(" ".join(args))
+        """Add a user to the database. Usage: user.add <name> <password>."""
+        self.commandInstance.replyWithMessage(args[0])
+        self._add(*args)
+
+    def _add(self, *args):
         args = toBytes(args[0]).split()
-        data = {"nickname": args[0],
-                "password": args[1],
-                "server": args[2]}
-        self.db.insert(table="users", data=data)
+        password = hashlib.sha256(args[1]).hexdigest()
+        data = {
+            "nickname": args[0],
+            "password": password,
+            "server": self.commandInstance.server
+        }
+        self.db.insert(table='users', data=data)
             
-    def rmrf(self, *args):
-        """$user.rmrf (user)
-        INB4 worst idea ever."""
+    def rm(self, *args):
+        """Remove a user from the database. Usage: user.rm <username>."""
+        self.commandInstance.replyWithMessage("Deleting user %s" % (args[0],))
+        self._rm(*args)
+
+    def _rm(self, *args):
         args = toBytes(args[0]).split()
-        data = {"nickname": args[0]}
+        data = {
+            "nickname": args[0]
+            "server": self.commandInstance.server
+        }
         self.db.delete(table="users", filters=data)
-        
-    def rmrfProject(self, *args):
-        """$user.rmrf (user)
-        INB4 worst idea ever."""
-        args = toBytes(args[0]).split()
-        data = {"name": args[0]}
-        self.db.delete(table="projects", filters=data)
     
+    def rmProject(self, *args):
+        """Remove a project from the database. Usage: user.rmProject <user> <project name>."""
+        user, projectName = args
+        self.commandInstance.replyWithMessage("Deleting project %s" % (projectName,))
+        self._rmProject(*args)
+
+    def _rmProject(self, *args):
+        args = toBytes(args[0]).split()
+        user, projectName = args
+        res = self.db.fetchone(
+            table="users", 
+            filters={
+                'nickname': user
+                'server': self.commandInstance.server
+            }
+        )
+        self.db.delete(
+            table="projects", 
+            filters={
+                'userId': res[0]
+                'name': projectName
+            }
+        )
+   
     def addProject(self, *args):
-        """$user.addProject (user projectName path)"""
+        """Add a project to the database. Usage: user.addProject <user> <project name> <path>."""
+        user, projectName, path = args
+        self.commandInstance.replyWithMessage("Adding project '%s'" % (projectName,))
+        self._addProject(*args)
+
+    def _addProject(self, *args):
         args = toBytes(args[0]).split()
         user, projectName, path = args
-        search = {"nickname": user}
-        res = self.db.fetchone(table="users", filters=search)
-        userid = res[0]
-        data = {"userID": userid, "name": projectName, "dir": path}
-        self.db.insert(table="projects", data=data)
-
+        res = self.db.fetchone(
+            table="users", 
+            filters={'nickname': user}
+        )
+        self.db.insert(
+            table="projects", 
+            data={
+                "userID": res[0], 
+                "name": projectName, 
+                "dir": path
+            }
+        )
+    
     def printUser(self, *args):
-        """$user.printUser (user)"""
+        """Reply with the user. Usage: user.printUser <user>."""
+        self.commandInstance.replyWithMessage(
+            self._printUser(*args)
+        )
+
+    def _printUser(self, *args):
         args = toBytes(args[0]).split()
-        search = {"nickname": args[0]}
-        res = self.db.fetchone(table="users", filters=search)
-        write(res)
-        self.commandInstance.replyWithMessage(res[1])
+        res = self.db.fetchone(
+            table="users", 
+            filters={
+                'nickname': args[0],
+                'server': self.commandInstance.server
+            }
+        )
+        return res[1]
 
     def printProject(self, *args):
-        """$user.printProject (project)"""
+        """Reply with the project information. Usage: user.printProject <user> <project name>"""
+        self.commandInstance.replyWithMessage(
+            self._printProject(*args)
+        )
+
+    def printProject(self, *args):
         args = toBytes(args[0]).split()
-        search = {"name": args[0]}
-        res = self.db.fetchone(table="projects", filters=search)
-        self.commandInstance.replyWithMessage(res[2] + " : " + res[3])
+        user, projectName = args
+        res = self.db.fetchone(
+            table='users', 
+            filters={
+                'nickname': user,
+                'server': self.commandInstance.server
+            }
+        )
+        res = self.db.fetchone(
+            table="projects", 
+            filters={
+                'userId': res[0],
+                'name': projectName
+            }
+        )
+       return res[2] + " : " + res[3] 
 
