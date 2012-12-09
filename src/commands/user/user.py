@@ -80,6 +80,9 @@ class User(object):
             self.commandInstance.replyWithMessage(
                 "Wrong user/password!"
             )
+            self.commandInstance.replyWithMessage(
+                "Your password %s" % res[2]
+            )
 
 
     def add(self, *args):
