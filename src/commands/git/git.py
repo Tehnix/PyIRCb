@@ -24,7 +24,8 @@ class Git(object):
         path = None
         try:
             path = ' '.join(args[0].split()[1])
-            cmd = ["git", "clone", args[0].split()[0], path]
+            repos = "https://" + args[0].split()[0],
+            cmd = ["git", "clone", repos, path]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             self.commandInstance.replyWithMessage(p.stdout.read())
         except IndexError:
