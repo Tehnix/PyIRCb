@@ -213,9 +213,9 @@ class Command(object):
                 imp.reload(module)
                 moduleNotFound = False
         if moduleNotFound: 
-            self.replyWithMessage("Modules have been updated!")
-        else:
             self.replyWithMessage("No module named %s." % (mod,))
+        else:
+            self.replyWithMessage("Modules have been updated!")
 
 
     def loadTheModules(self):
