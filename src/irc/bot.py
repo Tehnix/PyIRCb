@@ -20,13 +20,13 @@ class Bot(object):
     def __init__(self, settingsInstance, info):
         """Prepare the object."""
         super(Bot, self).__init__()
+        self.parserInstance = src.irc.parser.Parser(settingsInstance, self)
         self.settingsInstance = settingsInstance
         self.info = info
+        self.sock = None
         self.server = None
         self.channels = {}
         self.operator = '$'
-        self.parserInstance = src.irc.parser.Parser(settingsInstance, self)
-        self.sock = None
         self.handleInfo()
     
     def handleInfo(self):

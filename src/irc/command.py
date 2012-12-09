@@ -27,10 +27,14 @@ class Command(object):
         self.sock = None
         self.running = False
         self.loadTheModules()
-        self.server = self.botInstance.server.address
+        self.server = ""
         self.user = ""
         self.channel = ""
         self.msgType = "PRIVMSG"
+
+    def setServer(self):
+        """Set the server variable."""
+        self.server = self.botInstance.server.address
     
     def pong(self, data):
         """Respond to a PING with a PONG."""

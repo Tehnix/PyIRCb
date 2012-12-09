@@ -41,6 +41,9 @@ class Parser(object):
         _parse() method.
         
         """
+        # This can't be done in the __init__, because the server hasn't been
+        # set by then...
+        self.commandInstance.setServer()
         while True:
             try:
                 readbuffer = util.toUnicode(self.sock.recv(4096)).split('\r\n')
