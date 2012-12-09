@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Test command...
+User command...
 
 """
 
@@ -9,7 +9,7 @@ from src.irc.database import Database
 
 class user(object):
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
-        super(Test, self).__init__()
+        super(user, self).__init__()
         self.settingsInstance = settingsInstance
         self.commandInstance = commandInstance
         if cmdName is not None:
