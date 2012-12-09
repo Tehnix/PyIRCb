@@ -10,9 +10,10 @@ import urllib.parse
 import urllib.error
 import json
 
+import src.module
 import src.utilities as util
 
-class Cf(object):
+class Cf(src.module.ModuleBase):
     """
     Interact with the CloudFlare API.
     """    
