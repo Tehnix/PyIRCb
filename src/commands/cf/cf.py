@@ -17,24 +17,18 @@ class Cf(object):
     Interact with the CloudFlare API.
     """    
 
-    def __init__(self, settingsInstance, commandInstance, cmdName, *args):
-        super(Cf, self).__init__()
-        self.settingsInstance = settingsInstance
-        self.commandInstance = commandInstance
+    def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
+        super(Cf, self).__init__(cmdInstance, cmdArgs=cmdArgs)
         if cmdName is not None:
-            if args[0] is not None:
-                getattr(self, cmdName)(*args)
-            else:
-                getattr(self, cmdName)()
+            self._execute(cmdName)
     
-    def stats(self, *args):
+    
+    def stats(self):
         """Pull out CloudFlare statistics."""
         cfSettings = self.settingsInstance.settings['commands']['cf']
-        print(args)
-        if args:
-            site = ''.join(args)
-        else:
-            site = cfSettings['z']
+        site = cfSettings['z']
+        if self.args:
+            site = self.args
         parameters = {
             'a': 'stats',
             'tkn': cfSettings['tkn'],
@@ -51,7 +45,7 @@ class Cf(object):
         traffic = req['response']['result']['objs'][0]['trafficBreakdown']
         uniq = traffic['uniques']
         views = traffic['pageviews']
-        parsed = "Unique visitors: Regular = %s, Threat = %s, Crawler = %s. Pageviews: Regular = %s, Threat = %s, Crawler = %s." % (
+        parsed = "Unique visitors: Regular = %s, Threat = %s, Crawler = %s. \nPageviews: Regular = %s, Threat = %s, Crawler = %s." % (
             uniq['regular'],
             uniq['threat'],
             uniq['crawler'],
@@ -59,15 +53,14 @@ class Cf(object):
             views['threat'],
             views['crawler']
         )
-        self.commandInstance.replyWithMessage(parsed)
+        self.reply(parsed)
 
-    def purge(self, *args):
+    def purge(self):
         """Purge the CloudFlare caches."""
         cfSettings = self.settingsInstance.settings['commands']['cf']
-        if args:
-            site = ''.join(args)
-        else:
-            site = cfSettings['z']
+        site = cfSettings['z']
+        if self.args:
+            site = self.args
         parameters = {
             'a': 'fpurge_ts',
             'tkn': cfSettings['tkn'],
@@ -82,12 +75,13 @@ class Cf(object):
         response = urllib.request.urlopen(req)
         req = json.loads(response.read().decode('utf8'))
         if req['result'] == 'success':
-            self.commandInstance.replyWithMessage(
-                'Succesfully purged cache for %s' % (cfSettings['z'],)
-            )
+            self.reply('Succesfully purged cache for %s' % (cfSettings['z'],))
         else:
-            self.commandInstance.replyWithMessage(
-                'Clearing cache for %s returned: %s' % (cfSettings['z'], req['result'],)
+            self.reply(
+                'Clearing cache for %s returned: %s' % (
+                    cfSettings['z'],
+                    req['result']
+                )
             )
 
 
