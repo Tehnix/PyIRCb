@@ -48,6 +48,7 @@ class User(object):
 
     def add(self, *args):
         """$user.add (user password server)"""
+        self.commandInstance.replyWithMessage(args)
         data = {"nickname": args[0],
                 "password": args[1],
                 "server": args[2]}
