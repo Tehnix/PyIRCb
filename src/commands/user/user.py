@@ -21,7 +21,7 @@ class user(object):
         self.db = Database(dbtype="SQLite", dbname="database.db")
         self.db.execute(sql="""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)""")
         self.db.execute(sql="""CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)""")
-
+    
     def add(self, *args):
         """$user.add (user password server)"""
         data = {"nickname": args[0],
