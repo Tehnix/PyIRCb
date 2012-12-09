@@ -58,6 +58,8 @@ class Parser(object):
                 sys.exit(1)
             except UnicodeDecodeError:
                 continue
+            except UnicodeEncodeError:
+                continue
     
     def parseData(self, data):
         """Parse through the data stream received from the socket."""

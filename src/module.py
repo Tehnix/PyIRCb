@@ -25,16 +25,17 @@ loggedInUsers = {}
 
 class ModuleBase(object):
     
-    def __init__(self, settingsInstance, commandInstance, authRequired, *args):
+    def __init__(self, cmdInstance, cmdArgs=None, authRequired=None):
         super(ModuleBase, self).__init__()
-        self.settingsInstance = settingsInstance
-        self.commandInstance = commandInstance
-        self.reply = self.commandInstance.replyWithMessage
-        self.username = self.commandInstance.user
+        self.cmdInstance = cmdInstance
+        self.reply = self.cmdInstance.replyWithMessage
+        self.username = self.cmdInstance.user
         self.db = None
-        self.args = args[0]
-        self.bars = util.toBytes(args[0])
-        self.authRequired = authRequired
+        self.args = cmdArgs
+        self.bargs = util.toBytes(cmdArgs)
+        self.authRequired = []
+        if authRequired is not None:
+            self.authRequired = authRequired
 
     def _execute(self, cmdName):
         if cmdName in self.authRequired and self._isLoggedIn(self.commandInstance.user):
@@ -43,7 +44,7 @@ class ModuleBase(object):
             self._executeCommand(cmdName)
         else:
             self.reply(
-            "The command 'user.%s' requires that you are authenticated. Use the user.identify command to log in to the system, and try again." % (cmdName,)
+                "The command 'user.%s' requires that you are authenticated. Use the user.identify command to log in to the system, and try again." % (cmdName,)
             )
 
     def _executeCommand(self, cmdName):

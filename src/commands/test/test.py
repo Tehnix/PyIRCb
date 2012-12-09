@@ -7,20 +7,22 @@ Test command...
 
 
 class Test(object):
+    """
+    This is a simple test class. It can serve as inspiration to 
+    how a module could look.
     
-    def __init__(self, settingsInstance, commandInstance, cmdName, *args):
-        super(Test, self).__init__()
-        self.settingsInstance = settingsInstance
-        self.commandInstance = commandInstance
+    """
+    
+    def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
+        super(Test, self).__init__(cmdInstance, cmdArgs=cmdArgs)
         if cmdName is not None:
-            if args[0] is not None:
-                getattr(self, cmdName)(*args)
-            else:
-                getattr(self, cmdName)()
+            self._execute(cmdName)
     
-    def testing(self, *args):
+    def testing(self):
+        """Reply with a good ol' jolly emoticon: Usage: test.testing."""
         self.commandInstance.replyWithMessage(':D !')
     
-    def say(self, *args):
-        self.commandInstance.replyWithMessage(' '.join(args))
+    def say(self):
+        """Repeat the received sentence. Usage: test.say <sentence>."""
+        self.commandInstance.replyWithMessage(self.args)
         

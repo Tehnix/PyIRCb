@@ -118,7 +118,7 @@ class Command(object):
                 getattr(
                     self.commandModules[cmd[0]],
                     cmd[0].title()
-                )(self.settingsInstance, self, cmd[1], cmd[2])
+                )(self, cmdName=cmd[1], cmdArgs=cmd[2])
             else:
                 self.replyWithMessage(
                     "Methods starting with _ are private methods!"
