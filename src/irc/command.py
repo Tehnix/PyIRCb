@@ -74,6 +74,7 @@ class Command(object):
 
     def replyWithMessage(self, text, msgType=None):
         """Send a message to the channel from which we received the command."""
+        text = util.toUnicode(text)
         recipient = self.user
         if self.channel.startswith("#"):
             recipient = self.channel
@@ -199,16 +200,23 @@ class Command(object):
         except Exception as e:
             self.replyWithMessage("Docstring: Exception occured: %s " % (e,))
 
-    def update(self):
+    def update(self, mod=None):
         """
         Reload all the command modules previously imported and saved to the
         class variable commandModules.
 
         """
+        moduleNotFound = True
         self.loadTheModules()
         for name, module in self.commandModules.items():
-            imp.reload(module)
-        self.replyWithMessage("Modules have been updated!")
+            if mod is None or name == mod:
+                imp.reload(module)
+                moduleNotFound = False
+        if moduleNotFound: 
+            self.replyWithMessage("No module named %s." % (mod,))
+        else:
+            self.replyWithMessage("Modules have been updated!")
+
 
     def loadTheModules(self):
         """
