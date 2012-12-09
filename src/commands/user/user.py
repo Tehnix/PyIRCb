@@ -49,14 +49,13 @@ class User(object):
 
     def _getUser(self, username):
         """Get the id of a specific user."""
-        res = self.db.fetchone(
+        return self.db.fetchone(
             table='users', 
             filters={
                 'nickname': util.toBytes(username),
                 'server': util.toBytes(self.commandInstance.server)
             }
         )
-        return res
 
     def _getUid(self, username):
         """Get the id of a specific user."""
@@ -174,10 +173,13 @@ class User(object):
 
     def printUsers(self, *args):
         args = util.toBytes(args[0]).split()
+        self.commandInstance.replyWithMessage(
+            "%s : %s : %s" % (self.commandInstance.user, args[0], (self.commandInstance.user == args[0]))
+        )
         res = self.db.fetchall(
             table='users', 
             filters={
-                'nickname': self.commandInstance.user,
+                'nickname': args[0],
                 'server': self.commandInstance.server
             }
         )
