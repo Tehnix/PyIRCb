@@ -70,6 +70,9 @@ class User(object):
         global loggedInUsers
         username = self.commandInstance.user
         user = self._getUser(username)
+        self.commandInstance.replyWithMessage(
+            "%s : %s : %s" % (username, args[0], (username == args[0]))
+        )
         if user is not None:
             password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
             if password == user[2]:
