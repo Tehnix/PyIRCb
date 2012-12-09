@@ -200,22 +200,22 @@ class Command(object):
         except Exception as e:
             self.replyWithMessage("Docstring: Exception occured: %s " % (e,))
 
-    def update(self, module=None):
+    def update(self, mod=None):
         """
         Reload all the command modules previously imported and saved to the
         class variable commandModules.
 
         """
-        moduleFound = False
+        moduleNotFound = True
         self.loadTheModules()
         for name, module in self.commandModules.items():
-            if module is None or name == module:
+            if mod is None or name == mod:
                 imp.reload(module)
-                moduleFound = True
+                moduleNotFound = False
         if moduleFound:
             self.replyWithMessage("Modules have been updated!")
         else:
-            self.replyWithMessage("No module named %s." % (module,))
+            self.replyWithMessage("No module named %s." % (mod,))
 
 
     def loadTheModules(self):
