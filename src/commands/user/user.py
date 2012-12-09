@@ -14,14 +14,14 @@ class User(object):
         super(User, self).__init__()
         self.settingsInstance = settingsInstance
         self.commandInstance = commandInstance
+        self.db = Database(dbtype="SQLite", dbname="database.db")
+        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)""")
+        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)""")
         if cmdName is not None:
             if args[0] is not None:
                 getattr(self, cmdName)(*args)
             else:
                 getattr(self, cmdName)()
-        self.db = Database(dbtype="SQLite", dbname="database.db")
-        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)""")
-        self.db.execute(sql="""CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)""")
     
     def testuser(self):
         self.commandInstance.replyWithMessage(
@@ -48,7 +48,7 @@ class User(object):
 
     def add(self, *args):
         """$user.add (user password server)"""
-        self.commandInstance.replyWithMessage(args)
+        self.commandInstance.replyWithMessage(" ".join(args))
         data = {"nickname": args[0],
                 "password": args[1],
                 "server": args[2]}
