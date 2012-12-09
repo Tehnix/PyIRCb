@@ -12,6 +12,9 @@ from src.database import Database
 from src.utilities import toBytes, write
 
 
+loggedInUsers = []
+
+
 class User(object):
     
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
@@ -57,6 +60,7 @@ class User(object):
 
     def identify(self, *args):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
+        global loggedInUsers
         password = hashlib.sha256(args[0]).hexdigest()
         filters = {
             "nickname": self.commandInstance.user,
@@ -65,6 +69,7 @@ class User(object):
         }
         res = self.db.fetchone(table='users', filters=filters)
         if res is not None:
+            loggedInUsers.append(self.commandInstance.user)
             self.commandInstance.replyWithMessage(
                 "You're now logged in!"
             )
