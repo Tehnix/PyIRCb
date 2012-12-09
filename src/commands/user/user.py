@@ -62,10 +62,11 @@ class User(object):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         global loggedInUsers
         password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
+        self.commandInstance.replyWithMessage(password)
         filters = {
-            "nickname": self.commandInstance.user,
-            #"password": password,
-            "server": self.commandInstance.server
+            'nickname': self.commandInstance.user,
+            #'password': password,
+            'server': self.commandInstance.server
         }
         res = self.db.fetchone(table='users', filters=filters)
         if res is not None:
@@ -79,9 +80,6 @@ class User(object):
         else:
             self.commandInstance.replyWithMessage(
                 "Wrong user/password!"
-            )
-            self.commandInstance.replyWithMessage(
-                "Your password %s" % res[2]
             )
 
 
