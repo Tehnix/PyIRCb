@@ -9,7 +9,7 @@ User command...
 import hashlib
 import grp
 from src.database import Database
-from src.utilities import toBytes, write
+import src.utilities as util
 
 
 loggedInUsers = []
@@ -61,7 +61,7 @@ class User(object):
     def identify(self, *args):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         global loggedInUsers
-        password = hashlib.sha256(args[0]).hexdigest()
+        password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
         filters = {
             "nickname": self.commandInstance.user,
             "password": password,
@@ -86,10 +86,10 @@ class User(object):
         self._add(*args)
 
     def _add(self, *args):
-        args = toBytes(args[0]).split()
-        password = hashlib.sha256(args[1]).hexdigest()
+        nickname, password = util.toBytes(args[0]).split()
+        password = hashlib.sha256(password).hexdigest()
         data = {
-            "nickname": args[0],
+            "nickname": nickname,
             "password": password,
             "server": self.commandInstance.server
         }
@@ -101,7 +101,7 @@ class User(object):
         self._rm(*args)
 
     def _rm(self, *args):
-        args = toBytes(args[0]).split()
+        args = util.toBytes(args[0]).split()
         data = {
             "nickname": args[0],
             "server": self.commandInstance.server
@@ -115,7 +115,7 @@ class User(object):
         self._rmProject(*args)
 
     def _rmProject(self, *args):
-        args = toBytes(args[0]).split()
+        args = util.toBytes(args[0]).split()
         user, projectName = args
         self.db.delete(
             table="projects", 
@@ -132,7 +132,7 @@ class User(object):
         self._addProject(*args)
 
     def _addProject(self, *args):
-        args = toBytes(args[0]).split()
+        args = util.toBytes(args[0]).split()
         user, projectName, path = args
         self.db.insert(
             table="projects", 
@@ -150,7 +150,7 @@ class User(object):
         )
 
     def _printUser(self, *args):
-        args = toBytes(args[0]).split()
+        args = util.toBytes(args[0]).split()
         res = self.db.fetchone(
             table="users", 
             filters={
@@ -167,7 +167,7 @@ class User(object):
         )
 
     def _printProject(self, *args):
-        args = toBytes(args[0]).split()
+        args = util.toBytes(args[0]).split()
         user, projectName = args
         res = self.db.fetchone(
             table="projects", 
