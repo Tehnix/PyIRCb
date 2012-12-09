@@ -52,8 +52,8 @@ class User(object):
         return self.db.fetchone(
             table='users', 
             filters={
-                'nickname': util.toBytes(username),
-                'server': util.toBytes(self.commandInstance.server)
+                'nickname': username,
+                'server': self.commandInstance.server
             }
         )
 
@@ -68,7 +68,7 @@ class User(object):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         global loggedInUsers
         username = self.commandInstance.user
-        user = self._getUser(username)
+        user = self._getUser(util.toBytes(username))
         if user is not None:
             password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
             if password == user[2]:
@@ -171,15 +171,10 @@ class User(object):
         )
         return res[1]
 
-    def printUsers(self, *args):
-        args = util.toBytes(args[0]).split()
-        self.commandInstance.replyWithMessage(
-            "%s : %s : %s" % (util.toBytes(self.commandInstance.user), args[0], (util.toBytes(self.commandInstance.user) == args[0]))
-        )
+    def printUsers(self):
         res = self.db.fetchall(
             table='users', 
             filters={
-                'nickname': args[0],
                 'server': self.commandInstance.server
             }
         )
