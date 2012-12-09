@@ -5,8 +5,10 @@ Test command...
 
 """
 
+import src.module
 
-class Test(object):
+
+class Test(src.module.ModuleBase):
     """
     This is a simple test class. It can serve as inspiration to 
     how a module could look.
