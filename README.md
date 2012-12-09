@@ -1,5 +1,5 @@
 #PyBot
-An easily extensible IRC bot written in python 3... And some other jazzy stuff...
+An easily extensible IRC bot written in python 3... And some other jazzy stuff.....
 
 ---
 
