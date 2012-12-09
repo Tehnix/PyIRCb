@@ -27,6 +27,7 @@ class Command(object):
         self.sock = None
         self.running = False
         self.loadTheModules()
+        self.server = self.botInstance.server.address
         self.user = ""
         self.channel = ""
         self.msgType = "PRIVMSG"
