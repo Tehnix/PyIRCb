@@ -177,7 +177,7 @@ class User(object):
         res = self.db.fetchall(
             table='users', 
             filters={
-                'nickname': args[0],
+                'nickname': self.commandInstance.user,
                 'server': self.commandInstance.server
             }
         )
