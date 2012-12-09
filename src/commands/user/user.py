@@ -67,7 +67,7 @@ class User(object):
     def _rm(self, *args):
         args = toBytes(args[0]).split()
         data = {
-            "nickname": args[0]
+            "nickname": args[0],
             "server": self.commandInstance.server
         }
         self.db.delete(table="users", filters=data)
@@ -84,14 +84,14 @@ class User(object):
         res = self.db.fetchone(
             table="users", 
             filters={
-                'nickname': user
+                'nickname': user,
                 'server': self.commandInstance.server
             }
         )
         self.db.delete(
             table="projects", 
             filters={
-                'userId': res[0]
+                'userId': res[0],
                 'name': projectName
             }
         )
@@ -141,7 +141,7 @@ class User(object):
             self._printProject(*args)
         )
 
-    def printProject(self, *args):
+    def _printProject(self, *args):
         args = toBytes(args[0]).split()
         user, projectName = args
         res = self.db.fetchone(
@@ -158,5 +158,5 @@ class User(object):
                 'name': projectName
             }
         )
-       return res[2] + " : " + res[3] 
+        return res[2] + " : " + res[3] 
 
