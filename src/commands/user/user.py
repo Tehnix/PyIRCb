@@ -7,7 +7,7 @@ User command...
 """
 
 from src.database import Database
-from src.utilities import toBytes
+from src.utilities import toBytes, write
 
 class User(object):
     
@@ -85,6 +85,7 @@ class User(object):
         args = toBytes(args[0]).split()
         search = {"nickname": args[0]}
         res = self.db.fetchone(table="users", filters=search)
+        write(res)
         self.commandInstance.replyWithMessage(res)
 
     def printProject(self, *args):
