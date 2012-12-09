@@ -23,7 +23,7 @@ class Git(object):
         """Clone a repository into a directory. Usage git.clone <repository> <absolute path to dir> ."""
         path = None
         try:
-            path = ' '.join(args[0].split()[1])
+            path = args[0].split()[1]
             repos = "https://" + args[0].split()[0]
             cmd = ["git", "clone", repos, path]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
