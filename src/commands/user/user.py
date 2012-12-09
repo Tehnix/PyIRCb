@@ -47,7 +47,7 @@ class User(object):
         else:
             return ', '.join(members)
 
-    def _getUid(self, username):
+    def _getUser(self, username):
         """Get the id of a specific user."""
         res = self.db.fetchone(
             table='users', 
@@ -56,30 +56,34 @@ class User(object):
                 'server': self.commandInstance.server
             }
         )
-        return res[0]
+        return res
+
+    def _getUid(self, username):
+        """Get the id of a specific user."""
+        user = self._getUser(username) 
+        if user is not None:
+            return user[0]
+        return None
 
     def identify(self, *args):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         global loggedInUsers
-        password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
-        self.commandInstance.replyWithMessage(password)
-        filters = {
-            'nickname': self.commandInstance.user,
-            #'password': password,
-            'server': self.commandInstance.server
-        }
-        res = self.db.fetchone(table='users', filters=filters)
-        if res is not None:
-            loggedInUsers.append(self.commandInstance.user)
-            self.commandInstance.replyWithMessage(
-                "You're now logged in!"
-            )
-            self.commandInstance.replyWithMessage(
-                "Your password %s" % res[2]
-            )
+        username = self.commandInstance.user
+        user = self._getUser(username)
+        if user is not None:
+            password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
+            if password == user[2]:
+                loggedInUsers.append(username)
+                self.commandInstance.replyWithMessage(
+                    "You're now logged in :D"
+                )
+            else:
+                self.commandInstance.replyWithMessage(
+                    "Incorrect password :/"
+                )
         else:
             self.commandInstance.replyWithMessage(
-                "Wrong user/password!"
+                "No user with nickname '%s' was found :(" % (username,)
             )
 
 
@@ -92,12 +96,14 @@ class User(object):
     def _add(self, *args):
         nickname, password = util.toBytes(args[0]).split()
         password = hashlib.sha256(password).hexdigest()
-        data = {
-            "nickname": nickname,
-            "password": password,
-            "server": self.commandInstance.server
-        }
-        self.db.insert(table='users', data=data)
+        self.db.insert(
+            table='users', 
+            data={
+                'nickname': nickname,
+                'password': password,
+                'server': self.commandInstance.server
+            }
+        )
             
     def rm(self, *args):
         """Remove a user from the database. Usage: user.rm <username>."""
@@ -106,11 +112,13 @@ class User(object):
 
     def _rm(self, *args):
         args = util.toBytes(args[0]).split()
-        data = {
-            "nickname": args[0],
-            "server": self.commandInstance.server
-        }
-        self.db.delete(table="users", filters=data)
+        self.db.delete(
+            table='users', 
+            filters={
+                'nickname': args[0],
+                'server': self.commandInstance.server
+            }
+        )
     
     def rmProject(self, *args):
         """Remove a project from the database. Usage: user.rmProject <user> <project name>."""
@@ -122,7 +130,7 @@ class User(object):
         args = util.toBytes(args[0]).split()
         user, projectName = args
         self.db.delete(
-            table="projects", 
+            table='projects', 
             filters={
                 'userId': self._getUid(user),
                 'name': projectName
@@ -139,11 +147,11 @@ class User(object):
         args = util.toBytes(args[0]).split()
         user, projectName, path = args
         self.db.insert(
-            table="projects", 
+            table='projects', 
             data={
-                "userID": self._getUid(user), 
-                "name": projectName, 
-                "dir": path
+                'userID': self._getUid(user), 
+                'name': projectName, 
+                'dir': path
             }
         )
     
@@ -156,7 +164,7 @@ class User(object):
     def _printUser(self, *args):
         args = util.toBytes(args[0]).split()
         res = self.db.fetchone(
-            table="users", 
+            table='users', 
             filters={
                 'nickname': args[0],
                 'server': self.commandInstance.server
@@ -174,7 +182,7 @@ class User(object):
         args = util.toBytes(args[0]).split()
         user, projectName = args
         res = self.db.fetchone(
-            table="projects", 
+            table='projects', 
             filters={
                 'userId': self._getUid(user),
                 'name': projectName
