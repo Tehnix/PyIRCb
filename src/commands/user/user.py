@@ -46,7 +46,8 @@ class User(object):
 
     def add(self, *args):
         """Add a user to the database. Usage: user.add <name> <password>."""
-        self.commandInstance.replyWithMessage(args[0])
+        user, password = args[0].split()
+        self.commandInstance.replyWithMessage("Creating user %s" % (user,))
         self._add(*args)
 
     def _add(self, *args):
@@ -74,7 +75,7 @@ class User(object):
     
     def rmProject(self, *args):
         """Remove a project from the database. Usage: user.rmProject <user> <project name>."""
-        user, projectName = args
+        user, projectName = args[0].split()
         self.commandInstance.replyWithMessage("Deleting project %s" % (projectName,))
         self._rmProject(*args)
 
@@ -98,7 +99,7 @@ class User(object):
    
     def addProject(self, *args):
         """Add a project to the database. Usage: user.addProject <user> <project name> <path>."""
-        user, projectName, path = args
+        user, projectName, path = args[0].split()
         self.commandInstance.replyWithMessage("Adding project '%s'" % (projectName,))
         self._addProject(*args)
 
