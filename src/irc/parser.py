@@ -86,15 +86,17 @@ class Parser(object):
     def userActions(self, data):
         """Commands invoked by the user."""
         data = data.split(':')
+        cmd = ':'.join(data[1:])[1:]
         if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
             self.commandInstance.user = data[1].split()[0].split('!')[0]
             self.commandInstance.channel = data[1].split()[2]
+            self.commandInstance.msgType = data[1].split()[1]
             if data[2].lower() == '%supdate' % (self.botInstance.operator,):
                 self.commandInstance.update()
             elif data[2].startswith('%shelp' % (self.botInstance.operator,)):
-                self.commandInstance.help(data[2][1:])
+                self.commandInstance.help(cmd)
             elif data[2].startswith(self.botInstance.operator):
-                self.commandInstance.execute(data[2][1:])
+                self.commandInstance.execute(cmd)
         elif data[1].split()[1] in ['INVITE']:
             self.commandInstance.joinRoom(data[2])
 
