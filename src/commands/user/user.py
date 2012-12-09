@@ -70,9 +70,6 @@ class User(object):
         global loggedInUsers
         username = self.commandInstance.user
         user = self._getUser(username)
-        self.commandInstance.replyWithMessage(
-            "%s : %s : %s" % (username, args[0], (username == args[0]))
-        )
         if user is not None:
             password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
             if password == user[2]:
@@ -175,6 +172,20 @@ class User(object):
         )
         return res[1]
 
+    def printUsers(self, *args):
+        args = util.toBytes(args[0]).split()
+        res = self.db.fetchall(
+            table='users', 
+            filters={
+                'nickname': args[0],
+                'server': self.commandInstance.server
+            }
+        )
+        for user in res:
+            self.commandInstance.replyWithMessage(
+                "id: %s, user: %s" % (user[0], user[1])
+            )
+    
     def printProject(self, *args):
         """Reply with the project information. Usage: user.printProject <user> <project name>"""
         self.commandInstance.replyWithMessage(
