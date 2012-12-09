@@ -52,8 +52,8 @@ class User(object):
         res = self.db.fetchone(
             table='users', 
             filters={
-                'nickname': username,
-                'server': self.commandInstance.server
+                'nickname': util.toBytes(username),
+                'server': util.toBytes(self.commandInstance.server)
             }
         )
         return res
