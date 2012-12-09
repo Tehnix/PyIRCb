@@ -64,7 +64,7 @@ class User(object):
         password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
         filters = {
             "nickname": self.commandInstance.user,
-            "password": password,
+            #"password": password,
             "server": self.commandInstance.server
         }
         res = self.db.fetchone(table='users', filters=filters)
@@ -72,6 +72,9 @@ class User(object):
             loggedInUsers.append(self.commandInstance.user)
             self.commandInstance.replyWithMessage(
                 "You're now logged in!"
+            )
+            self.commandInstance.replyWithMessage(
+                "Your password %s" % res[2]
             )
         else:
             self.commandInstance.replyWithMessage(
