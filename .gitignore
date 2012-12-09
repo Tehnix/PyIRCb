@@ -5,7 +5,9 @@
 .DS_Store 
 .DS_Store
 
-pybot.conf
+*.conf
+
+*.sqlite3
 
 *.pyc
 src/*.pyc

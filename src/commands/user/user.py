@@ -1,44 +1,120 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-
-User command...
+User module. Implements a full authentication system, and project
+tracking.
 
 """
 
 import hashlib
 import grp
-from src.database import Database
+
+
+import src.module
 import src.utilities as util
+from src.database import Database
 
 
-loggedInUsers = []
-
-
-class User(object):
+class User(src.module.ModuleBase):
     
     def __init__(self, settingsInstance, commandInstance, cmdName, *args):
-        super(User, self).__init__()
-        self.settingsInstance = settingsInstance
-        self.commandInstance = commandInstance
-        self.db = Database(dbtype="SQLite", dbname="database.db")
-        self.db.execute(
-            'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY,nickname TEXT, password TEXT, server TEXT)'
+        super(User, self).__init__(
+            settingsInstance,
+            commandInstance,
+            ['rm'], # authRequired
+            *args
         )
-        self.db.execute(
-            'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY,userId INTEGER, name TEXT, dir TEXT)'
+        self.db = self._createDatabase('database.sqlite3')
+        self._createTables([
+            'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, nickname TEXT, password TEXT, server TEXT)',
+            'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY, userId INTEGER, name TEXT, dir TEXT)'
+        ])
+        self._execute(cmdName)
+            
+    def _userExists(self, username):
+        if self._getUser(util.toBytes(username)) is not None:
+            return True
+        return False
+        
+    def _getUser(self, username):
+        """Get the id of a specific user."""
+        return self.db.fetchone(
+            table='users', 
+            filters={
+                'nickname': util.toBytes(username),
+                'server': self.commandInstance.server
+            }
         )
-        if cmdName is not None:
-            if args[0] is not None:
-                getattr(self, cmdName)(*args)
-            else:
-                getattr(self, cmdName)()
+    
+    def _getUserById(self, uid):
+        """Get the id of a specific user."""
+        return self.db.fetchone(
+            table='users', 
+            filters={
+                'id': uid,
+                'server': self.commandInstance.server
+            }
+        )
 
-    def users(self):
-        """Get a list of users in the users group."""
-        self.commandInstance.replyWithMessage(self._users())
+    def _getUid(self, username):
+        """Get the id of a specific user."""
+        user = self._getUser(util.toBytes(username)) 
+        if user is not None:
+            return user[0]
+        return None
 
-    def _users(self, output='string'):
+    def _isLoggedIn(self, username):
+        if username in src.module.loggedInUsers:
+            return True
+        return False
+            
+    def _addProject(self, username, projectName, path):
+        self.db.insert(
+            table='projects', 
+            data={
+                'userID': self._getUid(util.toBytes(username)), 
+                'name': util.toBytes(projectName), 
+                'dir': util.toBytes(path)
+            }
+        )
+            
+    def _removeProject(self, username, projectName):
+        self.db.delete(
+            table='projects', 
+            filters={
+                'userId': self._getUid(util.toBytes(username)),
+                'name': util.toBytes(projectName)
+            }
+        )
+        
+    def _addUser(self, username, password):
+        self.db.insert(
+            table='users', 
+            data={
+                'nickname': util.toBytes(username),
+                'password': hashlib.sha256(util.toBytes(password)).hexdigest(),
+                'server': self.commandInstance.server
+            }
+        )
+        
+    def _removeUser(self, username):
+        self.db.delete(
+            table='users', 
+            filters={
+                'nickname': util.toBytes(username),
+                'server': self.commandInstance.server
+            }
+        )
+
+    def _users(self):
+        return self.db.fetchall(
+            table='users', 
+            filters={
+                'server': self.commandInstance.server
+            }
+        )
+    
+    def _vpsUsers(self, output='string'):
         for group in grp.getgrall():
             if group.gr_name == 'users':
                 members = group.gr_mem
@@ -46,183 +122,131 @@ class User(object):
             return members
         else:
             return ', '.join(members)
-
-    def _getUser(self, username):
-        """Get the id of a specific user."""
-        return self.db.fetchone(
-            table='users', 
-            filters={
-                'nickname': username,
-                'server': self.commandInstance.server
-            }
-        )
-
-    def _getUid(self, username):
-        """Get the id of a specific user."""
-        user = self._getUser(username) 
-        if user is not None:
-            return user[0]
-        return None
-
-    def identify(self, *args):
-        """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
-        global loggedInUsers
-        username = self.commandInstance.user
-        user = self._getUser(util.toBytes(username))
-        if user is not None:
-            password = hashlib.sha256(util.toBytes(args[0])).hexdigest()
-            if password == user[2]:
-                loggedInUsers.append(username)
-                self.commandInstance.replyWithMessage(
-                    "You're now logged in :D"
-                )
-            else:
-                self.commandInstance.replyWithMessage(
-                    "Incorrect password :/"
-                )
-        else:
-            self.commandInstance.replyWithMessage(
-                "No user with nickname '%s' was found :(" % (username,)
-            )
-
-    def isLoggedIn(self, *args):
-        """Check if a user is logged in. Usage: user.isLoggedIn <user>."""
-        if self._isLoggedIn(*args):
-            self.commandInstance.replyWithMessage(
-                "%s is logged in." % (args[0],)
-            )
-        else:
-            self.commandInstance.replyWithMessage(
-                "%s is *not* logged in." % (args[0],)
-            )
-
-    def _isLoggedIn(self, *args):
-        global loggedInUsers
-        if args[0] in loggedInUsers:
-            return True
-        return False
-
-    def add(self, *args):
-        """Add a user to the database. Usage: user.add <name> <password>."""
-        user, password = args[0].split()
-        if self._add(*args):
-            self.commandInstance.replyWithMessage(
-                "Added user '%s' to the system :)" % (user,)
-            )
-        else:
-            self.commandInstance.replyWithMessage(
-                "User '%s' already exists in the system D: ..." % (user,)
-            )
-
-    def _add(self, *args):
-        nickname, password = util.toBytes(args[0]).split()
-        if self._getUser(nickname) is not None:
-            return False
-        password = hashlib.sha256(password).hexdigest()
-        self.db.insert(
-            table='users', 
-            data={
-                'nickname': nickname,
-                'password': password,
-                'server': self.commandInstance.server
-            }
-        )
-        return True
             
-    def rm(self, *args):
-        """Remove a user from the database. Usage: user.rm <username>."""
-        self.commandInstance.replyWithMessage("Deleting user %s" % (args[0],))
-        self._rm(*args)
-
-    def _rm(self, *args):
-        args = util.toBytes(args[0]).split()
-        self.db.delete(
-            table='users', 
+    def _project(self, username, projectname):
+        return self.db.fetchone(
+            table='projects', 
             filters={
-                'nickname': args[0],
-                'server': self.commandInstance.server
+                'userId': self._getUid(util.toBytes(username)),
+                'name': util.toBytes(projectname)
             }
         )
     
-    def rmProject(self, *args):
-        """Remove a project from the database. Usage: user.rmProject <user> <project name>."""
-        user, projectName = args[0].split()
-        self.commandInstance.replyWithMessage("Deleting project %s" % (projectName,))
-        self._rmProject(*args)
-
-    def _rmProject(self, *args):
-        args = util.toBytes(args[0]).split()
-        user, projectName = args
-        self.db.delete(
+    def _projects(self, uid):
+        return self.db.fetchall(
             table='projects', 
             filters={
-                'userId': self._getUid(user),
-                'name': projectName
-            }
-        )
-   
-    def addProject(self, *args):
-        """Add a project to the database. Usage: user.addProject <user> <project name> <path>."""
-        user, projectName, path = args[0].split()
-        self.commandInstance.replyWithMessage("Adding project '%s'" % (projectName,))
-        self._addProject(*args)
-
-    def _addProject(self, *args):
-        args = util.toBytes(args[0]).split()
-        user, projectName, path = args
-        self.db.insert(
-            table='projects', 
-            data={
-                'userID': self._getUid(user), 
-                'name': projectName, 
-                'dir': path
+                'userId': uid
             }
         )
     
-    def printUser(self, *args):
-        """Reply with the user. Usage: user.printUser <user>."""
-        self.commandInstance.replyWithMessage(
-            self._printUser(*args)
-        )
-
-    def _printUser(self, *args):
-        args = util.toBytes(args[0]).split()
-        res = self.db.fetchone(
-            table='users', 
-            filters={
-                'nickname': args[0],
-                'server': self.commandInstance.server
-            }
-        )
-        return res[1]
-
-    def printUsers(self):
-        res = self.db.fetchall(
-            table='users', 
-            filters={
-                'server': self.commandInstance.server
-            }
-        )
-        for user in res:
-            self.commandInstance.replyWithMessage(
-                "id: %s, user: %s" % (user[0], user[1])
+    def userExists(self):
+        """Check if a user exists. Usage: user.userExists <user>."""
+        user = self.args
+        if self._userExists(user):
+            self.reply(
+                "User '%s' exists in the system." % (user,)
+            )
+        else:
+            self.reply(
+                "User '%s' does *not* exist in the system." % (user,)
             )
     
-    def printProject(self, *args):
-        """Reply with the project information. Usage: user.printProject <user> <project name>"""
-        self.commandInstance.replyWithMessage(
-            self._printProject(*args)
-        )
+    def identify(self):
+        """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
+        user = self._getUser(self.username)
+        if user is not None:
+            if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
+                # TODO: replace the unixtimestamps with actual unix timestamps
+                src.module.loggedInUsers[self.username] = {
+                    'lastLogin': 'unixtimestamp',
+                    'failedLoginAttemptsSinceLastLogin': 0,
+                    'loggedTime': 'unixtimestamp'
+                }
+                self.reply("You're now logged in :D")
+            else:
+                self.reply("Incorrect password :/")
+        else:
+            self.reply(
+                "No user with nickname '%s' was found :(" % (self.username,)
+            )
 
-    def _printProject(self, *args):
-        args = util.toBytes(args[0]).split()
-        user, projectName = args
-        res = self.db.fetchone(
-            table='projects', 
-            filters={
-                'userId': self._getUid(user),
-                'name': projectName
-            }
-        )
-        return res[2] + " : " + res[3] 
-
+    def isLoggedIn(self):
+        """Check if a user is logged in. Usage: user.isLoggedIn <user>."""
+        user = self.args
+        if self._isLoggedIn(user):
+            self.reply("%s is logged in." % (user,))
+        else:
+            self.reply("%s is *not* logged in." % (user,))
+    
+    def vpsUsers(self):
+        """Get a list of users in the users group on the VPS."""
+        self.reply(self._vpsUsers())
+        
+    def users(self):
+        """Reply with all the users found in the database. Usage: user.users."""
+        for user in self._users():
+            self.reply("id: %s, user: %s" % (user[0], user[1]))
+    
+    def project(self):
+        """Reply with the project information. Usage: user.project <user> <project name>."""
+        username, projectname = self.args.split()
+        project = self._project(username, projectname)
+        if project is not None:
+            self.reply(
+                project[0] + " : " + project[1]
+            )
+        else:
+            self.reply(
+                "No project for %s name '%s'..." % (username, projectname)
+            )
+    
+    def projects(self):
+        """Reply with all the projects found in the database. Usage: user.projects."""
+        projectsNotFound = True
+        users = self._users()
+        if users is not None:
+            for user in users:
+                projects = self._projects(user[0])
+                for project in projects:
+                    self.reply(
+                        "Owner: %s, Name: %s" % (
+                            util.toUnicode(user[1]),
+                            util.toUnicode(project[2])
+                        )
+                    )
+                    projectsNotFound = False
+        if projectsNotFound:
+            self.reply("No projects has been created yet! D: ...")
+    
+    def add(self):
+        """Add a user to the database. Usage: user.add <name> <password>."""
+        username, password = self.args.split()
+        if self._userExists(username):
+            self.reply(
+                "User '%s' already exists in the system D: ..." % (username,)
+            )
+        else:
+            self._addUser(username, password)
+            self.reply("Added user '%s' to the system :)" % (username,))
+            
+    def rm(self):
+        """Remove a user from the database. Usage: user.rm <username>."""
+        user = self.args
+        if self._userExists(user):
+            self._removeUser(user)
+            self.reply("Delete user '%s' from the system :'( ..." % (user,))
+        else:
+            self.reply("User '%s' dosn't exist in the system :) ..." % (user,))
+    
+    def addProject(self):
+        """Add a project to the database. Usage: user.addProject <user> <project name> <path>."""
+        user, projectName, path = self.args.split()
+        self.reply("Adding project '%s'" % (projectName,))
+        self._addProject(user, projectName, path)
+        
+    def rmProject(self):
+        """Remove a project from the database. Usage: user.rmProject <user> <project name>."""
+        user, projectName = self.args.split()
+        self.reply("Deleting project %s" % (projectName,))
+        self._removeProject(user, projectName)
