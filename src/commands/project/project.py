@@ -28,23 +28,31 @@ class Project(src.module.ModuleBase):
             self._execute(cmdName)
             
     def _addProject(self, username, projectName, path):
-        self.db.insert(
-            table='projects', 
-            data={
-                'userID': self.userModule._getUid(util.toBytes(username)), 
-                'name': util.toBytes(projectName), 
-                'dir': util.toBytes(path)
-            }
-        )
+        user = self.userModule._getUid(util.toBytes(username))
+        if user is not None:
+            self.db.insert(
+                table='projects', 
+                data={
+                    'userID': user, 
+                    'name': util.toBytes(projectName), 
+                    'dir': util.toBytes(path)
+                }
+            )
+            return True
+        return False
             
     def _removeProject(self, username, projectName):
-        self.db.delete(
-            table='projects', 
-            filters={
-                'userId': self.userModule._getUid(util.toBytes(username)),
-                'name': util.toBytes(projectName)
-            }
-        )
+        user = self.userModule._getUid(util.toBytes(username))
+        if user is not None:
+            self.db.delete(
+                table='projects', 
+                filters={
+                    'userId': user,
+                    'name': util.toBytes(projectName)
+                }
+            )
+            return True
+        return False
             
     def _project(self, username, projectname):
         return self.db.fetchone(
@@ -64,9 +72,9 @@ class Project(src.module.ModuleBase):
         )
     
     def project(self):
-        """Reply with the project information. Usage: project.project <user> <project name>."""
+        """Reply with the project information. Usage: project.project <project name> [user]."""
         try:
-            username, projectname = self.args.split()
+            projectname, username = self.args.split()
         except ValueError:
             username = self.username
             projectname = self.args
@@ -75,7 +83,7 @@ class Project(src.module.ModuleBase):
             self.reply(project[0] + " : " + project[1])
         else:
             self.reply(
-                "No project for %s name '%s'..." % (username, projectname)
+                "No project '%s' found under user %s..." % (projectname, username)
             )
     
     def projects(self):
@@ -107,22 +115,27 @@ class Project(src.module.ModuleBase):
             self.reply("No projects has been created yet! D: ...")
 
     def add(self):
-        """Add a project to the database. Usage: project.addProject [user] <project name> <path>. If no user is supplied, it will be implied that the user is the command issuer."""
+        """Add a project to the database. Usage: project.add <project name> <path> [user]. If no user is supplied, it will be implied that the user is the command issuer."""
         try:
-            user, projectName, path = self.args.split()
+            projectName, path, user = self.args.split()
         except ValueError:
             user = self.username
             projectName, path = self.args.split()
-        self.reply("Adding project '%s'" % (projectName,))
-        self._addProject(user, projectName, path)
+        if self._addProject(user, projectName, path):
+            self.reply("Added project '%s' to user %s" % (projectName, user,))
+        else:
+            self.reply("Please create a user account for '%s' first." % (user,))
         
     def rm(self):
-        """Remove a project from the database. Usage: project.rmProject [user] <project name>. If no user is supplied, it will be implied that the user is the command issuer."""
+        """Remove a project from the database. Usage: project.rm <project name> [here]. If no user is supplied, it will be implied that the user is the command issuer."""
         try:
-            user, projectName = self.args.split()
+            projectName, user = self.args.split()
         except ValueError:
             user = self.username
             projectName = self.args
-        self.reply("Deleting project %s" % (projectName,))
-        self._removeProject(user, projectName)
+        if self._removeProject(user, projectName):
+            self.reply("Deleted project '%s' from user %s" % (projectName, user,))
+        else:
+            self.reply("Project '%s' wasn't found under user %s" % (projectName, user,))
+
 

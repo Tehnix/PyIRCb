@@ -8,12 +8,14 @@ tracking.
 
 import hashlib
 import grp
+import time
 
 import src.module
 import src.utilities as util
 
 
 class User(src.module.ModuleBase):
+    """Common user commands, and an auth system."""
     
     def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
         super(User, self).__init__(
@@ -29,7 +31,8 @@ class User(src.module.ModuleBase):
             self._execute(cmdName)
             
     def _userExists(self, username):
-        if self._getUser(util.toBytes(username)) is not None:
+        """Check if a user exists in the database."""
+        if self._getUser(username) is not None:
             return True
         return False
         
@@ -61,11 +64,13 @@ class User(src.module.ModuleBase):
         return None
 
     def _isLoggedIn(self, username):
-        if username in src.module.loggedInUsers:
+        """Check if a user is logged in."""
+        if username in src.module.loggedInUsers and src.module.loggedInUsers[username]['loggedIn']:
             return True
         return False
         
     def _addUser(self, username, password):
+        """Add a user to the database."""
         self.db.insert(
             table='users', 
             data={
@@ -76,6 +81,7 @@ class User(src.module.ModuleBase):
         )
         
     def _removeUser(self, username):
+        """Remove a user from the database."""
         self.db.delete(
             table='users', 
             filters={
@@ -85,6 +91,7 @@ class User(src.module.ModuleBase):
         )
 
     def _users(self):
+        """Return a list of all users."""
         return self.db.fetchall(
             table='users', 
             filters={
@@ -93,6 +100,7 @@ class User(src.module.ModuleBase):
         )
     
     def _vpsUsers(self, output='string'):
+        """Return a list of all users in the user group on the vps."""
         for group in grp.getgrall():
             if group.gr_name == 'users':
                 members = group.gr_mem
@@ -101,8 +109,8 @@ class User(src.module.ModuleBase):
         else:
             return ', '.join(members)
     
-    def userExists(self):
-        """Check if a user exists. Usage: user.userExists <user>."""
+    def exists(self):
+        """Check if a user exists. Usage: user.exists <user>."""
         user = self.args
         if self._userExists(user):
             self.reply(
@@ -117,15 +125,36 @@ class User(src.module.ModuleBase):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         user = self._getUser(self.username)
         if user is not None:
-            if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
-                # TODO: replace the unixtimestamps with actual unix timestamps
+            if self.username not in src.module.loggedInUsers:
                 src.module.loggedInUsers[self.username] = {
-                    'lastLogin': 'unixtimestamp',
+                    'loggedIn': False,
+                    'lastLogin': 0,
                     'failedLoginAttemptsSinceLastLogin': 0,
-                    'loggedTime': 'unixtimestamp'
+                    'loggedTime': 0
                 }
-                self.reply("You're now logged in :D")
+            userLoginInfo = src.module.loggedInUsers[self.username]
+            lastLoginTime = userLoginInfo['loggedTime']
+            failedAttempts = userLoginInfo['failedLoginAttemptsSinceLastLogin']
+
+            if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
+                lastLoginTime = time.time()
+                src.module.loggedInUsers[self.username] = {
+                    'loggedIn': True,
+                    'lastLogin': lastLoginTime,
+                    'failedLoginAttemptsSinceLastLogin': 0,
+                    'loggedTime': time.time()
+                }
+                self.reply(
+                    "Last login %s" % (
+                        time.strftime("%a %b %d %H:%M:%S", time.gmtime(lastLoginTime))
+                    )
+                )
+                if failedAttempts > 0:
+                    self.reply(
+                        "Failed login attempts since last login: %s" % (failedAttempts,)
+                    )
             else:
+                userLoginInfo['failedLoginAttemptsSinceLastLogin'] += 1
                 self.reply("Incorrect password :/")
         else:
             self.reply(
@@ -176,3 +205,4 @@ class User(src.module.ModuleBase):
             self.reply("Delete user '%s' from the system :'( ..." % (user,))
         else:
             self.reply("User '%s' dosn't exist in the system :) ..." % (user,))
+
