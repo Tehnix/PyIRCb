@@ -233,7 +233,6 @@ class Command(object):
         """
         for importer, package_name, _ in pkgutil.iter_modules(['src/commands']):
             full_pkg_name = 'src.commands.%s.%s' % (package_name, package_name)
-            if full_pkg_name not in sys.modules:
-                module = importlib.import_module(full_pkg_name)
-                self.commandModules[package_name.lower()] = module
+            module = importlib.import_module(full_pkg_name)
+            self.commandModules[package_name.lower()] = module
         

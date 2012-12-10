@@ -146,6 +146,39 @@ class Database(threading.Thread):
         else:
             raise NameError('There was no SQL to be parsed')
     
+    def rawfetch(self, sql=None, data=None, fetchall=True, out='none'):
+        """Fetches all rows from the given SQL.
+        
+        Arg [out] specifies what the output should be:
+            none   : do nothing here (simply return)
+            output : send output to stdout
+
+        """
+        if sql is not None:
+            self.connect()
+            try:
+                if data is None:
+                    self.cursor.execute(sql)
+                else:
+                    self.cursor.execute(sql, tuple(data))
+            except sqlite3.OperationalError as error:
+                self.conn.rollback()
+                if out == 'output':
+                    write("Error running SQL: %s" % (sql,))
+                return 'SQL Error: %s' % error
+            else:
+                if out == 'output':
+                    write("Successfully ran: %s" % (sql,))
+                # Cleanup and return
+                if fetchall:
+                    result = self.cursor.fetchall()
+                else:
+                    result = self.cursor.fetchone()
+                self.cursor.close()
+                return result
+        else:
+            raise NameError('There was no SQL to be parsed')
+
     def fetchall(self, table=None, filters=None, add='', out='none'):
         """Fetches all rows from database based on the filters applied.
         
@@ -154,11 +187,13 @@ class Database(threading.Thread):
             output : send output to stdout
         
         """
+        append = ' WHERE '
         if filters is None:
             filters = {}
+            append = ''
         if table is not None:
             # Construct the SQL
-            sql = 'SELECT * FROM ' + table + ' WHERE ' +\
+            sql = 'SELECT * FROM ' + table + append +\
                   self._keys_to_sql(filters)
             self.connect()
             try:
