@@ -6,6 +6,7 @@ IRC servers...
 """
 
 import src.irc.channelObject
+import src.utilities as util
 
 
 # NOTE: The logged in users dict loggedInUsers are in this format:
@@ -40,7 +41,7 @@ class ServerObject(object):
         self.identify = False
         self.operator = '$'
         self.admins = []
-        self.loggedInUsers = {}
+        self.users = {}
         self.manageSettings(globalInfo, info)
         
     def manageSettings(self, globalInfo, info):
@@ -73,8 +74,26 @@ class ServerObject(object):
         except KeyError:
             pass
     
+    def loggedInUsers(self):
+        loggedInUsers = []
+        for user, info in self.users.items():
+            if info.loggedIn:
+                loggedInUsers.append(user)
+        return loggedInUsers
+                
+    def nickChange(self, oldNick, newNick):
+        oldNick = util.stripUsername(oldNick)
+        newNick = util.stripUsername(newNick)
+        self.users[newNick] = self.users[oldNick]
+        del self.users[oldNick]
+
+    def userQuit(self, username):
+        username = util.stripUsername(username)
+        self.users[username].online = False
+
     def addChannel(self, name):
-        self.channels[name] = src.irc.channelObject.ChannelObject(name)
+        self.channels[name] = src.irc.channelObject.ChannelObject(self, name)
     
     def removeChannel(self, name):
         del self.channels[name]
+

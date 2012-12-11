@@ -6,12 +6,12 @@ tracking.
 
 """
 
-import src.module
+import src.moduleBase
 import src.modules.user.user
 import src.utilities as util
 
 
-class Project(src.module.ModuleBase):
+class Project(src.moduleBase.ModuleBase):
     
     def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
         super(Project, self).__init__(

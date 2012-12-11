@@ -10,11 +10,11 @@ import hashlib
 import grp
 import time
 
-import src.module
+import src.moduleBase
 import src.utilities as util
 
 
-class User(src.module.ModuleBase):
+class User(src.moduleBase.ModuleBase):
     """Common user commands, and an auth system."""
     
     def __init__(self, cmdHandler, cmdName=None, cmdArgs=None):
@@ -62,19 +62,6 @@ class User(src.module.ModuleBase):
         if user is not None:
             return user[0]
         return None
-
-    def _logout(self, username):
-        """Logout a user. Returns True if the user was loggedin, else False."""
-        if self.username in self.loggedInUsers:
-            self.loggedInUsers[self.username]['loggedIn'] = False
-            return True
-        return False
-        
-    def _isLoggedIn(self, username):
-        """Check if a user is logged in."""
-        if username in self.loggedInUsers and self.loggedInUsers[username]['loggedIn']:
-            return True
-        return False
         
     def _addUser(self, username, password):
         """Add a user to the database."""
@@ -128,53 +115,34 @@ class User(src.module.ModuleBase):
                 "User '%s' does *not* exist in the system." % (user,)
             )
     
-    def _logInUser(self, username):
-        userLoginInfo = self.loggedInUsers[username]
-        lastLoginTime = userLoginInfo['loggedTime']
-        self.loggedInUsers[self.username] = {
-            'loggedIn': True,
-            'lastLogin': lastLoginTime,
-            'failedLoginAttemptsSinceLastLogin': 0,
-            'loggedTime': time.time()
-        }
-    
     def identify(self):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         user = self._getUser(self.username)
-        if user is not None:
-            if self.username not in self.loggedInUsers:
-                self.loggedInUsers[self.username] = {
-                    'loggedIn': False,
-                    'lastLogin': 0,
-                    'failedLoginAttemptsSinceLastLogin': 0,
-                    'loggedTime': 0
-                }
-            userLoginInfo = self.loggedInUsers[self.username]
-            failedAttempts = userLoginInfo['failedLoginAttemptsSinceLastLogin']
-
-            if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
-                lastLogin = "never"
-                if userLoginInfo['loggedTime'] != 0:
-                    lastLogin = time.strftime(
-                        "%a %b %d %H:%M:%S",            
-                        time.gmtime(userLoginInfo['loggedTime'])
-                    )
-                self._logInUser(self.username)
-                self.reply("Last login %s" % lastLogin)
-                if failedAttempts > 0:
-                    self.reply("Failed login attempts since last login: %s" % failedAttempts)
-            else:
-                userLoginInfo['failedLoginAttemptsSinceLastLogin'] += 1
-                self.reply("Incorrect password :/")
-        else:
+        if user is None:
             self.reply(
                 "No user with nickname '%s' was found :(" % self.username
             )
+            return False
+        userInfo = self.server.users[self.username]
+        if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
+            lastLogin = 'never'
+            if userInfo.loggedInTime != 0:
+                lastLogin = time.strftime(
+                    "%a %b %d %H:%M:%S",            
+                    time.gmtime(userInfo.loggedInTime)
+                )
+            self._logInUser(self.username)
+            self.reply("Last login %s" % lastLogin)
+            if userInfo.failedLoginAttempts > 0:
+                self.reply("Failed login attempts since last login: %s" % userInfo.failedLoginAttempts)
+        else:
+            userInfo.failedLoginAttempts += 1
+            self.reply("Incorrect password :/")
             
     def logout(self):
         """Log out of the system. Usage: user.logout."""
         if self._logout(self.username):
-            self.reply("You have been succesfully logged out! :)...")
+            self.reply("You have succesfully been logged out! :)...")
         else:
             self.reply("You aren't logged in...")
 

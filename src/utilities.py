@@ -11,6 +11,11 @@ import traceback
 
 verbose = False
 
+def stripUsername(username):
+    if username[0:1] in ['@', '%', '!']:
+        username = username[1:]
+    return username
+
 def write(text, outputType="*", priority=1):
     """Write out the given text."""
     if verbose and text != "" or priority > 3 and text != "":

@@ -57,6 +57,23 @@ class CommandHandler(object):
         """Make the bot join a room."""
         self.sendRawMessage("JOIN :%s" % room)
     
+    def topic(self, text):
+        """Return or set the topic of the channel."""
+        if text:
+            self.sendRawMessage('TOPIC %s :%s' % (self.channel, text))
+            self.replyWithMessage('Topic has been set to %s' % text)
+        else:
+            self.replyWithMessage(
+                "Topic: %s" % self.server.channels[self.channel].topic
+            )
+
+    def displayUsers(self):
+        """Display the current users in the server object."""
+        self.replyWithMessage('Users online:')
+        for user, info in self.server.users.items():
+            if info.online:
+                self.replyWithMessage('  ' + info.nickname)
+
     def identify(self):
         """Identify the bot (login)."""
         pass
