@@ -51,7 +51,9 @@ At the moment there are several modules that go with the system by default. The 
 
 ---
 ## Module Development ##
-We're currently working on a command line option to generate a module scaffold, so you can start your module development quickly. Currently though, we advise you to look into the other modules, and some of the instructions here.
+You can generate a module with the scaffolding by doing `./main.py module mymodule`, which creates the module mymodule for you in the modules directory.
+
+#### A little bit about modules: ####
 
 A module extends the `ModuleBase` class found in src/moduleBase. This provides some functionality to get easily started (though it is not required). The only thing special about a module is it's `__init__`  method, which can look like the following:
 

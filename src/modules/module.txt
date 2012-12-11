@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Some explaining about the lovely { #MODULENAME } module...
+
+"""
+
+import src.moduleBase
+import src.utilities as util
+
+
+class { #CLASSNAME }(src.moduleBase.ModuleBase):
+    """Docstring explaining what { #MODULENAME } does."""
+    
+    def __init__(self, cmdHandler, cmdName=None, cmdArgs=None):
+        super({ #CLASSNAME }, self).__init__(
+            cmdHandler,
+            cmdArgs=cmdArgs,
+            authRequired=[]
+        )
+        if cmdName is not None:
+            self._execute(cmdName)
