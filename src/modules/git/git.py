@@ -7,9 +7,10 @@ Git commands!
 
 import subprocess       
 
-import src.module
+import src.moduleBase
 
-class Git(src.module.ModuleBase):
+
+class Git(src.moduleBase.ModuleBase):
     """Interact with git."""
     
     def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):

@@ -6,6 +6,9 @@ tracking.
 
 """
 
+import sys
+import time
+
 import src.utilities as util
 from src.database import Database
 
@@ -18,7 +21,7 @@ class ModuleBase(object):
         self.reply = self.cmdHandler.replyWithMessage
         self.server = self.cmdHandler.server
         self.username = self.cmdHandler.user
-        self.loggedInUsers = self.cmdHandler.server.loggedInUsers
+        self.loggedInUsers = self.cmdHandler.server.loggedInUsers()
         self._db = None
         self.args = cmdArgs
         self.bargs = util.toBytes(cmdArgs)
@@ -26,15 +29,38 @@ class ModuleBase(object):
         if authRequired is not None:
             self.authRequired = authRequired
 
+    def _isLoggedIn(self, username):
+        """Check if a user is logged in."""
+        if util.stripUsername(username) in self.loggedInUsers:
+            return True
+        return False
+    
+    def _logout(self, username):
+        """Logout a user. Returns True if the user was loggedin, else False."""
+        username = util.stripUsername(username)
+        if username in self.loggedInUsers:
+            self.server.users[username].loggedIn = False
+            return True
+        return False
+    
+    def _logInUser(self, username):
+        """Login a user."""
+        username = util.stripUsername(username)
+        if username not in self.loggedInUsers:
+            self.server.users[username].loggedIn = True
+            self.server.users[username].lastLogin = self.server.users[username].loggedInTime
+            self.server.users[username].loggedInTime = time.time()
+        
     def _execute(self, cmdName):
-        if cmdName in self.authRequired and self._isLoggedIn(self.commandInstance.user):
-            self._executeCommand(cmdName)
-        elif cmdName not in self.authRequired:
-            self._executeCommand(cmdName)
-        else:
-            self.reply(
-                "The command 'user.%s' requires that you are authenticated. Use the user.identify command to log in to the system, and try again." % (cmdName,)
-            )
+        try:
+            if cmdName in self.authRequired and self._isLoggedIn(self.commandInstance.user):
+                self._executeCommand(cmdName)
+            elif cmdName not in self.authRequired:
+                self._executeCommand(cmdName)
+            else:
+                self.reply("The command 'user.%s' requires that you are authenticated. Use the user.identify command to log in to the system, and try again." % cmdName)
+        except Exception as e:
+            util.writeException(sys.exc_info())
 
     def _executeCommand(self, cmdName):
         if cmdName is None:
@@ -67,3 +93,4 @@ class ModuleBase(object):
         
         """
         self._db = Database(dbtype="SQLite", dbname=value)
+

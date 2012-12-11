@@ -5,6 +5,8 @@
 .DS_Store 
 .DS_Store
 
+*.pid
+
 *.conf
 
 *.sqlite3
