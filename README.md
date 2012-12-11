@@ -3,10 +3,10 @@ An easily extensible IRC bot written in python 3...
 
 ### Table of Contents ###
 
-- [Configuration of the bot][Configuration-of-the-bot]
-- [Modules][Modules]
-- [Module Development][Module-Development]
-- [License][License]
+- [Configuration of the bot](#configuration-of-the-bot)
+- [Modules](#modules)
+- [Module Development](#module-Development)
+- [License](#license)
 
 ---
 ## Configuration of the bot ##
