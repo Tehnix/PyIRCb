@@ -10,26 +10,15 @@ import src.utilities as util
 from src.database import Database
 
 
-# Authenticated users are stored in the dictionary with the format:
-# {
-#     'username': {
-#         'lastLogin': 'unixtimestamp', # The last time you were logged in
-#         'failedLoginAttemptsSinceLastLogin': 0, # The number of failed login
-#         # attempts since last login
-#         'loggedTime': 'unixtimestamp' # The time you logged in, so total time can
-#         # be calculated
-#     }
-# }
-loggedInUsers = {}
-
-
 class ModuleBase(object):
     
-    def __init__(self, cmdInstance, cmdArgs=None, authRequired=None):
+    def __init__(self, cmdHandler, cmdArgs=None, authRequired=None):
         super(ModuleBase, self).__init__()
-        self.cmdInstance = cmdInstance
-        self.reply = self.cmdInstance.replyWithMessage
-        self.username = self.cmdInstance.user
+        self.cmdHandler = cmdHandler
+        self.reply = self.cmdHandler.replyWithMessage
+        self.server = self.cmdHandler.server
+        self.username = self.cmdHandler.user
+        self.loggedInUsers = self.cmdHandler.server.loggedInUsers
         self._db = None
         self.args = cmdArgs
         self.bargs = util.toBytes(cmdArgs)

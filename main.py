@@ -11,7 +11,7 @@ import src.utilities as util
 import src.settings
 import src.irc.botDispatcher
 
-
+__VERSION__ = "2.2.0"
 PARSER_DESC = "A python based IRC bot"
 PARSER_USAGE = """%prog [options]"""
 

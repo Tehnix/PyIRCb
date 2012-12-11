@@ -53,15 +53,15 @@ At the moment there are several modules that go with the system by default. The 
 ## Module Development ##
 We're currently working on a command line option to generate a module scaffold, so you can start your module development quickly. Currently though, we advise you to look into the other modules, and some of the instructions here.
 
-A module extends the `ModuleBase` class found in src/module. This provides some functionality to get easily started (though it is not required). The only thing special about a module is it's `__init__`  method, which can look like the following:
+A module extends the `ModuleBase` class found in src/moduleBase. This provides some functionality to get easily started (though it is not required). The only thing special about a module is it's `__init__`  method, which can look like the following:
 
 <pre>
-    class User(src.module.ModuleBase):
+    class User(src.moduleBase.ModuleBase):
         """Common user commands, and an auth system."""
     
-        def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
+        def __init__(self, cmdHandler, cmdName=None, cmdArgs=None):
             super(User, self).__init__(
-                cmdInstance,
+                cmdHandler,
                 cmdArgs=cmdArgs,
                 authRequired=['rm']
             )
@@ -80,10 +80,11 @@ The only custom thing about the user `__init__` (other than the `authRequired`),
 There are some neat functions that the `ModuleBase` sets for you:
 - `self.reply` - method to send a message to the IRC
 - `self.username` - the user that executed the command
+- `self.server` - the server object
 - `self.db` - access to the database object (which has neat methods for easy insert, update etc. The file is located in src/database.py)
 - `self.args` - unicode string containing the arguments passed to the module
 - `self.bargs` - bytes string containing the arguments passed to the module
-- `self.cmdInstace` - access to the command instance
+- `self.cmdHandler` - access to the commandHandler instance
 - `self.authRequired` - methods that require authentication
 
 

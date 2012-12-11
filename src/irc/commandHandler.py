@@ -8,10 +8,11 @@ IRC command handler...
 import sys
 import time
 
+import main as pybotmain
 import src.settings
-import src.irc.importHandler
 import src.modules
 import src.utilities as util
+import src.irc.importHandler
 
 
 class CommandHandler(object):
@@ -35,15 +36,17 @@ class CommandHandler(object):
     def ident(self):
         """Send the identification and nickname to the server."""
         util.write("Sending ident")
-        nick = self.server.nickname
-        real = self.server.realname
-        host = self.server.address
-        self.sendRawMessage("NICK %s" % nick)
-        self.sendRawMessage("USER %s %s +iw :%s" % (real, host, real,))
+        self.sendRawMessage("NICK %s" % self.server.nickname)
+        self.sendRawMessage("USER %s %s +iw :%s" % (
+            self.server.realname,
+            self.server.address,
+            self.server.realname
+        ))
     
     def ctcp(self):
         """Respond to a CTCP request."""
-        self.sendRawMessage("NOTICE %s :\001VERSION PyBot : v2.0 : Python 3\001" % self.user)
+        version = pybotmain.__VERSION__
+        self.sendRawMessage("NOTICE %s :\001VERSION PyBot : v%s : Python 3\001" % (self.user, version))
 
     def joinRooms(self, channelDict):
         """Loop through all the channels in channelDict, and join the rooms."""
@@ -52,7 +55,7 @@ class CommandHandler(object):
     
     def joinRoom(self, room):
         """Make the bot join a room."""
-        self.sendRawMessage("JOIN :%s" % (room,))
+        self.sendRawMessage("JOIN :%s" % room)
     
     def identify(self):
         """Identify the bot (login)."""
@@ -64,7 +67,7 @@ class CommandHandler(object):
     
     def sendRawMessage(self, text):
         """Send a raw message to the socket."""
-        text = "%s\r\n" % (text,)
+        text = "%s\r\n" % text
         util.write(text)
         self.sock.send(util.toBytes(text))
 
@@ -82,7 +85,7 @@ class CommandHandler(object):
         if len(splitText) > 10:
             timeout = 0.5
         for txt in splitText:
-            txt = "%s %s :%s\r\n" % (msgType, recipient, txt,)
+            txt = "%s %s :%s\r\n" % (msgType, recipient, txt)
             util.write(txt)
             self.sock.send(util.toBytes(txt))
             time.sleep(timeout)
@@ -149,14 +152,15 @@ class CommandHandler(object):
         except (AttributeError, KeyError):
             if cmdMethod is not None:
                 self.replyWithMessage(
-                    "Command %s.%s was not found" % (cmdClass, cmdMethod,)
+                    "Command %s.%s was not found" % (cmdClass, cmdMethod)
                 )
             else:
                 self.replyWithMessage(
-                    "Module '%s' was not found" % (cmdClass,)
+                    "Module '%s' was not found" % cmdClass
                 )
         except Exception as e:
-            self.replyWithMessage("Exception occured: %s " % (e,))
+            self.replyWithMessage("Exception occured during command execution: %s " % e)
+            util.writeException(sys.exc_info())
     
     def help(self, command):
         """
@@ -197,11 +201,12 @@ class CommandHandler(object):
         except (AttributeError, KeyError):
             if cmdMethod is not None:
                 self.replyWithMessage(
-                    "Docstring: Command %s.%s was not found" % (cmdClass, cmdMethod,)
+                    "Docstring: Command %s.%s was not found" % (cmdClass, cmdMethod)
                 )
             else:
                 self.replyWithMessage(
-                    "Docstring: Module '%s' was not found" % (cmdClass,)
+                    "Docstring: Module '%s' was not found" % cmdClass
                 )
         except Exception as e:
-            self.replyWithMessage("Docstring: Exception occured: %s " % (e,))
+            self.replyWithMessage("Docstring: Exception occured: %s " % e)
+            util.writeException(sys.exc_info())

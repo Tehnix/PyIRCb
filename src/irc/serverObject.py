@@ -8,6 +8,18 @@ IRC servers...
 import src.irc.channelObject
 
 
+# NOTE: The logged in users dict loggedInUsers are in this format:
+# {
+#     'username': {
+#         'lastLogin': 'unixtimestamp', # The last time you were logged in
+#         'failedLoginAttemptsSinceLastLogin': 0, # The number of failed login
+#         # attempts since last login
+#         'loggedTime': 'unixtimestamp' # The time you logged in, so total time can
+#         # be calculated
+#     }
+# }
+
+
 class ServerObject(object):
     
     def __init__(self, globalInfo, info):
@@ -28,12 +40,14 @@ class ServerObject(object):
         self.identify = False
         self.operator = '$'
         self.admins = []
+        self.loggedInUsers = {}
         self.manageSettings(globalInfo, info)
         
     def manageSettings(self, globalInfo, info):
         ignoredAttributes = [
             'channels',
-            'node'
+            'node',
+            'loggedInUsers'
         ]
         defaultToGlobalSettings = [
             'nickname',

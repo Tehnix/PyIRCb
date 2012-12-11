@@ -17,9 +17,9 @@ import src.utilities as util
 class User(src.module.ModuleBase):
     """Common user commands, and an auth system."""
     
-    def __init__(self, cmdInstance, cmdName=None, cmdArgs=None):
+    def __init__(self, cmdHandler, cmdName=None, cmdArgs=None):
         super(User, self).__init__(
-            cmdInstance,
+            cmdHandler,
             cmdArgs=cmdArgs,
             authRequired=['rm']
         )
@@ -42,7 +42,7 @@ class User(src.module.ModuleBase):
             table='users', 
             filters={
                 'nickname': util.toBytes(username),
-                'server': self.cmdInstance.server
+                'server': self.server.address
             }
         )
     
@@ -52,7 +52,7 @@ class User(src.module.ModuleBase):
             table='users', 
             filters={
                 'id': uid,
-                'server': self.cmdInstance.server
+                'server': self.server.address
             }
         )
 
@@ -63,9 +63,16 @@ class User(src.module.ModuleBase):
             return user[0]
         return None
 
+    def _logout(self, username):
+        """Logout a user. Returns True if the user was loggedin, else False."""
+        if self.username in self.loggedInUsers:
+            self.loggedInUsers[self.username]['loggedIn'] = False
+            return True
+        return False
+        
     def _isLoggedIn(self, username):
         """Check if a user is logged in."""
-        if username in src.module.loggedInUsers and src.module.loggedInUsers[username]['loggedIn']:
+        if username in self.loggedInUsers and self.loggedInUsers[username]['loggedIn']:
             return True
         return False
         
@@ -76,7 +83,7 @@ class User(src.module.ModuleBase):
             data={
                 'nickname': util.toBytes(username),
                 'password': hashlib.sha256(util.toBytes(password)).hexdigest(),
-                'server': self.cmdInstance.server
+                'server': self.server.address
             }
         )
         
@@ -86,7 +93,7 @@ class User(src.module.ModuleBase):
             table='users', 
             filters={
                 'nickname': util.toBytes(username),
-                'server': self.cmdInstance.server
+                'server': self.server.address
             }
         )
 
@@ -95,7 +102,7 @@ class User(src.module.ModuleBase):
         return self.db.fetchall(
             table='users', 
             filters={
-                'server': self.cmdInstance.server
+                'server': self.server.address
             }
         )
     
@@ -121,53 +128,63 @@ class User(src.module.ModuleBase):
                 "User '%s' does *not* exist in the system." % (user,)
             )
     
+    def _logInUser(self, username):
+        userLoginInfo = self.loggedInUsers[username]
+        lastLoginTime = userLoginInfo['loggedTime']
+        self.loggedInUsers[self.username] = {
+            'loggedIn': True,
+            'lastLogin': lastLoginTime,
+            'failedLoginAttemptsSinceLastLogin': 0,
+            'loggedTime': time.time()
+        }
+    
     def identify(self):
         """Identify yourself to the system (do this in a pm to the bot). Usage: user.identify <password>."""
         user = self._getUser(self.username)
         if user is not None:
-            if self.username not in src.module.loggedInUsers:
-                src.module.loggedInUsers[self.username] = {
+            if self.username not in self.loggedInUsers:
+                self.loggedInUsers[self.username] = {
                     'loggedIn': False,
                     'lastLogin': 0,
                     'failedLoginAttemptsSinceLastLogin': 0,
                     'loggedTime': 0
                 }
-            userLoginInfo = src.module.loggedInUsers[self.username]
-            lastLoginTime = userLoginInfo['loggedTime']
+            userLoginInfo = self.loggedInUsers[self.username]
             failedAttempts = userLoginInfo['failedLoginAttemptsSinceLastLogin']
 
             if user[2] == hashlib.sha256(util.toBytes(self.args)).hexdigest():
-                lastLoginTime = time.time()
-                src.module.loggedInUsers[self.username] = {
-                    'loggedIn': True,
-                    'lastLogin': lastLoginTime,
-                    'failedLoginAttemptsSinceLastLogin': 0,
-                    'loggedTime': time.time()
-                }
-                self.reply(
-                    "Last login %s" % (
-                        time.strftime("%a %b %d %H:%M:%S", time.gmtime(lastLoginTime))
+                lastLogin = "never"
+                if userLoginInfo['loggedTime'] != 0:
+                    lastLogin = time.strftime(
+                        "%a %b %d %H:%M:%S",            
+                        time.gmtime(userLoginInfo['loggedTime'])
                     )
-                )
+                self._logInUser(self.username)
+                self.reply("Last login %s" % lastLogin)
                 if failedAttempts > 0:
-                    self.reply(
-                        "Failed login attempts since last login: %s" % (failedAttempts,)
-                    )
+                    self.reply("Failed login attempts since last login: %s" % failedAttempts)
             else:
                 userLoginInfo['failedLoginAttemptsSinceLastLogin'] += 1
                 self.reply("Incorrect password :/")
         else:
             self.reply(
-                "No user with nickname '%s' was found :(" % (self.username,)
+                "No user with nickname '%s' was found :(" % self.username
             )
+            
+    def logout(self):
+        """Log out of the system. Usage: user.logout."""
+        if self._logout(self.username):
+            self.reply("You have been succesfully logged out! :)...")
+        else:
+            self.reply("You aren't logged in...")
 
     def isLoggedIn(self):
         """Check if a user is logged in. Usage: user.isLoggedIn <user>."""
         user = self.args
         if self._isLoggedIn(user):
-            self.reply("%s is logged in." % (user,))
+            self.reply("%s is logged in." % user)
         else:
-            self.reply("%s is *not* logged in." % (user,))
+            self.reply("%s is *not* logged in." % user)
     
     def vpsUsers(self):
         """Get a list of users in the users group on the VPS."""
