@@ -43,7 +43,6 @@ The following is an example of a configuration file. The config file should be p
 ## Modules ##
 At the moment there are several modules that go with the system by default. The plan is to later move some of these out into separate repositories, and keep some of the more essential ones.
 
-- Test module: Serves as a basic example of how to create a module.
 - User module: Features a authentication system and other user related tools
 - Project module: The ability to store projects and information about them. This module requires the user module.
 - Git module: Features like git pull and git clone
