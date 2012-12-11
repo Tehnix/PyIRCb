@@ -6,13 +6,13 @@ An easily extensible IRC bot written in python 3...
 - [Configuration of the bot](#configuration-of-the-bot)
 - [Modules](#modules)
 - [Module Development](#module-development)
+- [Command line options](#command-line-options)
 - [License](#license)
 
----
 ## Configuration of the bot ##
 The configuration file uses JSON. You can create a default configuration file by running the program with the -c parameter.
 
-`python3 main.py -c`
+`./main.py -c`
 
 The following is an example of a configuration file. The config file should be placed in the root directory of the bot (i.e. the same directory as the src folder is placed in).
 <pre>
@@ -39,7 +39,6 @@ The following is an example of a configuration file. The config file should be p
 }
 </pre>
 
----
 ## Modules ##
 At the moment there are several modules that go with the system by default. The plan is to later move some of these out into separate repositories, and keep some of the more essential ones.
 
@@ -48,7 +47,6 @@ At the moment there are several modules that go with the system by default. The 
 - Git module: Features like git pull and git clone
 - CloudFlare module (cf): Get statistics from your CloudFlare site, and also purge your CloudFlare cache.
 
----
 ## Module Development ##
 You can generate a module with the scaffolding by doing `./main.py module mymodule`, which creates the module mymodule for you in the modules directory.
 
@@ -89,7 +87,23 @@ There are some neat functions that the `ModuleBase` sets for you:
 - `self.authRequired` - methods that require authentication
 
 
----
+
+## Command line options ##
+All the command line options can be seen in the help menu of the bot, by typing `./main.py -h`:
+<pre>
+    usage: main.py [-h] [-c] [-v] module module
+
+    A python based IRC bot
+
+    positional arguments:
+      module         generate a module scaffold
+
+    optional arguments:
+      -h, --help     show this help message and exit
+      -c, --config   generate a default configuration file
+      -v, --verbose  print output to stdout
+</pre>
+
 ## License ##
 The source code is released under the BSD license. If you have any problems with this, or need another type of license, just contact me, and I'll fix it :)...
 <pre>
