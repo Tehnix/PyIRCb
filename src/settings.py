@@ -42,9 +42,12 @@ class Settings(object):
             try:
                 self.settingsFilePath = DEFAULT_SETTINGS_PATH
             except IOError:
-                self.writeSettingsFile(DEFAULT_CONF, path=DEFAULT_SETTINGS_PATH)
+                self.writeSettingsFile(
+                    DEFAULT_CONF,
+                    path=DEFAULT_SETTINGS_PATH
+                )
                 util.write(
-                    "No configuration file found, a defualt one has been generated at %s." % (DEFAULT_SETTINGS_PATH,),
+                    "No configuration file found, a default one has been generated at %s." % (DEFAULT_SETTINGS_PATH,),
                     priority=9
                 )
                 sys.exit(0)

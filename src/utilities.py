@@ -6,6 +6,7 @@ Various utitity methods...
 """
 
 import inspect
+import traceback
 
 
 verbose = False
@@ -14,6 +15,17 @@ def write(text, outputType="*", priority=1):
     """Write out the given text."""
     if verbose and text != "" or priority > 3 and text != "":
         print("[%s] %s" % (outputType, text,))
+
+def writeException(sysExec):
+    """Write out an exception"""
+    exc_type, exc_value, exc_traceback = sysExec
+    write(
+        "\r".join(
+            traceback.format_exception(
+                exc_type, exc_value, exc_traceback
+            )
+        )
+    )
 
 def toBytes(text):
     """Convert string (unicode) to bytes."""

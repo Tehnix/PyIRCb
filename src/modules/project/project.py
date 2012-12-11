@@ -7,7 +7,7 @@ tracking.
 """
 
 import src.module
-import src.commands.user.user
+import src.modules.user.user
 import src.utilities as util
 
 
@@ -19,11 +19,11 @@ class Project(src.module.ModuleBase):
             cmdArgs=cmdArgs,
             authRequired=['rm']
         )
-        self.db = self._createDatabase('database.sqlite3')
+        self.db = 'database.sqlite3'
         self._createTables([
             'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY, userId INTEGER, name TEXT, dir TEXT)'
         ])
-        self.userModule = src.commands.user.user.User(cmdInstance)
+        self.userModule = src.modules.user.user.User(cmdInstance)
         if cmdName is not None:
             self._execute(cmdName)
             

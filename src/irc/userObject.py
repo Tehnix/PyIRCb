@@ -6,8 +6,8 @@ IRC users...
 """
 
 
-class User(object):
+class UserObject(object):
     
     def __init__(self, nickname):
-        super(Channel, self).__init__()
+        super(UserObject, self).__init__()
         self.nickname = nickname

@@ -5,19 +5,19 @@ IRC channels...
 
 """
 
-import src.irc.user
+import src.irc.userObject
 
 
-class Channel(object):
+class ChannelObject(object):
     
     def __init__(self, name):
-        super(Channel, self).__init__()
+        super(ChannelObject, self).__init__()
         self.name = name
-        self.users = {}
         self.topic = ""
+        self.users = {}
     
     def addUser(self, nickname):
-        self.users[nickname] = src.irc.user.User(nickname)
+        self.users[nickname] = src.irc.userObject.UserObject(nickname)
     
     def removeUser(self, nickname):
         del self.users[nickname]

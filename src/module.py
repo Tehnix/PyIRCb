@@ -10,27 +10,16 @@ import src.utilities as util
 from src.database import Database
 
 
-# Authenticated users are stored in the dictionary with the format:
-# {
-#     'username': {
-#         'lastLogin': 'unixtimestamp', # The last time you were logged in
-#         'failedLoginAttemptsSinceLastLogin': 0, # The number of failed login
-#         # attempts since last login
-#         'loggedTime': 'unixtimestamp' # The time you logged in, so total time can
-#         # be calculated
-#     }
-# }
-loggedInUsers = {}
-
-
 class ModuleBase(object):
     
-    def __init__(self, cmdInstance, cmdArgs=None, authRequired=None):
+    def __init__(self, cmdHandler, cmdArgs=None, authRequired=None):
         super(ModuleBase, self).__init__()
-        self.cmdInstance = cmdInstance
-        self.reply = self.cmdInstance.replyWithMessage
-        self.username = self.cmdInstance.user
-        self.db = None
+        self.cmdHandler = cmdHandler
+        self.reply = self.cmdHandler.replyWithMessage
+        self.server = self.cmdHandler.server
+        self.username = self.cmdHandler.user
+        self.loggedInUsers = self.cmdHandler.server.loggedInUsers
+        self._db = None
         self.args = cmdArgs
         self.bargs = util.toBytes(cmdArgs)
         self.authRequired = []
@@ -58,13 +47,23 @@ class ModuleBase(object):
                 "Wrong number of arguments. See $help user.%s for help." % (cmdName,)
             )
         return False
-
-    def _createDatabase(self, databaseName):
-        """Create a database file."""
-        return Database(dbtype="SQLite", dbname=databaseName)
-    
+        
     def _createTables(self, tables):
         """Create tables from a list."""
         if self.db is not None:
             for table in tables:
                 self.db.execute(table)
+
+    @property
+    def db(self):
+        """Getter for the _sock attribute."""
+        return self._db
+
+    @db.setter
+    def db(self, value):
+        """
+        Setter for the _db attribute. Connect to a database file and 
+        create it if it doesn't exist.
+        
+        """
+        self._db = Database(dbtype="SQLite", dbname=value)

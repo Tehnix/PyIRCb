@@ -10,59 +10,35 @@ import ssl
 import time
 
 import src.utilities as util
-import src.irc.server
-import src.irc.channel
-import src.irc.parser
+import src.irc.serverObject
+import src.irc.channelObject
+import src.irc.dataParser
 
 
-class Bot(object):
+class BotObject(object):
     
-    def __init__(self, settingsInstance, info):
+    def __init__(self, globalInfo, info):
         """Prepare the object."""
-        super(Bot, self).__init__()
-        self.parserInstance = src.irc.parser.Parser(settingsInstance, self)
-        self.settingsInstance = settingsInstance
-        self.info = info
+        super(BotObject, self).__init__()
+        self.dataParser = None # set when the socket is not None
         self.sock = None
-        self.server = None
-        self.channels = {}
-        self.operator = '$'
-        self.handleInfo()
+        self.server = src.irc.serverObject.ServerObject(globalInfo, info)
     
-    def handleInfo(self):
-        """
-        Pass the information from self.info and the settings into the
-        appropriate instance variables.
-        
-        """
-        self.server = src.irc.server.Server(self.info)
-        try:
-            for name in self.info['channels']:
-                self.channels[name] = src.irc.channel.Channel(name)
-        except KeyError:
-            pass
-        try:
-            self.operator = self.info['operator']
-        except KeyError:
-            try:
-                self.operator = self.settingsInstance.settings['operator']
-            except KeyError:
-                pass
-        
     def connectToServer(self):
         """Connect to the address and pass the socket to the listener."""
         if self.server.connect:
             util.write("Initializing connection to %s" % (self.server.address,))
         while self.server.connect:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if self.server.ssl:
-                self.sock = ssl.wrap_socket(self.sock)
+                sock = ssl.wrap_socket(sock)
             # Allow reuse of the socket
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             # Set timeout limit, so we can detect if we are disconnected
-            self.sock.settimeout(300)
+            sock.settimeout(300)
             try:
-                self.sock.connect((self.server.address, self.server.port))
+                sock.connect((self.server.address, self.server.port))
+                self.sock = sock
             except socket.gaierror:
                 util.write(
                     "Either wrong hostname or no connection. Trying again.",
@@ -80,8 +56,7 @@ class Bot(object):
                 break
             else:
                 # We have succesfully connected, so we can start parsing
-                self.parserInstance.commandInstance.ident()
-                self.parserInstance.parse()
+                self.dataParser.parse()
                 
     def destroy(self):
         """
@@ -89,10 +64,11 @@ class Bot(object):
         server and closing the socket.
         
         """
-        self.parserInstance.disconnect()
+        if self.dataParser is not None:
+            self.dataParser.disconnect()
         self.sock.close()
         self.sock = None
-    
+
     @property
     def sock(self):
         """Getter for the _sock attribute."""
@@ -100,7 +76,12 @@ class Bot(object):
 
     @sock.setter
     def sock(self, value):
-        """Getter for the _sock attribute."""
+        """
+        Setter for the _sock attribute. If the socket is not set to 
+        none, then also create the parser instance and set its socket.
+        
+        """
         self._sock = value
-        self.parserInstance.sock = self.sock
-
+        if value is not None:
+            self.dataParser = src.irc.dataParser.DataParser(self.server)
+            self.dataParser.sock = self.sock
