@@ -13,8 +13,9 @@ import importlib
 class ImportHandler(object):
     """Manage module imports and updates."""
     
-    def __init__(self):
+    def __init__(self, cmdHandler):
         super(ImportHandler, self).__init__()
+        self.reply = cmdHandler.replyWithMessage
         self.importedModules = {}
         self.loadTheModules()
     
@@ -31,9 +32,9 @@ class ImportHandler(object):
                 imp.reload(module)
                 moduleNotFound = False
         if moduleNotFound: 
-            self.replyWithMessage("No module named %s." % (mod,))
+            self.reply("No module named %s." % (mod,))
         else:
-            self.replyWithMessage("Modules have been updated!")
+            self.reply("Modules have been updated!")
 
 
     def loadTheModules(self):
