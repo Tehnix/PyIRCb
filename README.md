@@ -43,7 +43,6 @@ The following is an example of a configuration file. The config file should be p
 ## Modules ##
 At the moment there are several modules that go with the system by default. The plan is to later move some of these out into separate repositories, and keep some of the more essential ones.
 
-- Test module: Serves as a basic example of how to create a module.
 - User module: Features a authentication system and other user related tools
 - Project module: The ability to store projects and information about them. This module requires the user module.
 - Git module: Features like git pull and git clone
@@ -51,7 +50,9 @@ At the moment there are several modules that go with the system by default. The 
 
 ---
 ## Module Development ##
-We're currently working on a command line option to generate a module scaffold, so you can start your module development quickly. Currently though, we advise you to look into the other modules, and some of the instructions here.
+You can generate a module with the scaffolding by doing `./main.py module mymodule`, which creates the module mymodule for you in the modules directory.
+
+#### A little bit about modules: ####
 
 A module extends the `ModuleBase` class found in src/moduleBase. This provides some functionality to get easily started (though it is not required). The only thing special about a module is it's `__init__`  method, which can look like the following:
 
