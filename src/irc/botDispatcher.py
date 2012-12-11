@@ -9,7 +9,7 @@ import threading
 
 import src.utilities as util
 import src.settings
-import src.irc.bot
+import src.irc.botObject
 
 
 class BotDispatcher(threading.Thread):
@@ -36,8 +36,8 @@ class BotDispatcher(threading.Thread):
         """Create one Bot object for each server and start it in threads."""
         servers = self.settingsInstance.settings['servers']
         for name, info in servers.items():
-            self.botObjects[name] = src.irc.bot.Bot(
-                self.settingsInstance,
+            self.botObjects[name] = src.irc.botObject.BotObject(
+                self.settingsInstance.settings,
                 info
             )
             thread = threading.Thread(
@@ -65,7 +65,7 @@ class BotDispatcher(threading.Thread):
             info = None
         if info is not None:
             self.destroyBot(botObjName)
-            self.botObjects[botObjName] = src.irc.bot.Bot(info)
+            self.botObjects[botObjName] = src.irc.botObject.BotObject(info)
             util.write("Bot %s has been reloaded." % botObjName)
         else:
             util.write(

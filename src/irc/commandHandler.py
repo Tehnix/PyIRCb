@@ -1,40 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-IRC commands...
+IRC command handler...
 
 """
 
-import imp
-import pkgutil
 import sys
-import importlib
+import time
 
-import src.utilities as util
 import src.settings
-import src.commands
+import src.irc.importHandler
+import src.modules
+import src.utilities as util
 
 
-class Command(object):
+class CommandHandler(object):
     
-    commandModules = {}
-    
-    def __init__(self, settingsInstance, botInstance):
+    def __init__(self, server):
         """Prepare the object and load all the command modules."""
-        super(Command, self).__init__()
-        self.settingsInstance = settingsInstance
-        self.botInstance = botInstance
+        super(CommandHandler, self).__init__()
+        self.server = server
         self.sock = None
         self.running = False
-        self.loadTheModules()
-        self.server = ""
         self.user = ""
         self.channel = ""
         self.msgType = "PRIVMSG"
-
-    def setServer(self):
-        """Set the server variable."""
-        self.server = self.botInstance.server.address
+        self.importHandler = src.irc.importHandler.ImportHandler()
     
     def pong(self, data):
         """Respond to a PING with a PONG."""
@@ -44,9 +35,9 @@ class Command(object):
     def ident(self):
         """Send the identification and nickname to the server."""
         util.write("Sending ident")
-        nick = self.settingsInstance.settings['nickname']
-        real = self.settingsInstance.settings['realname']
-        host = self.botInstance.server.address
+        nick = self.server.nickname
+        real = self.server.realname
+        host = self.server.address
         self.sendRawMessage("NICK %s" % nick)
         self.sendRawMessage("USER %s %s +iw :%s" % (real, host, real,))
     
@@ -85,57 +76,18 @@ class Command(object):
             recipient = self.channel
         if msgType is None:
             msgType = self.msgType
-        for txt in text.split("\n"):
+        # Avoid flooding of a channel
+        splitText = text.split("\n")
+        timeout = 0.2
+        if len(splitText) > 10:
+            timeout = 0.5
+        for txt in splitText:
             txt = "%s %s :%s\r\n" % (msgType, recipient, txt,)
             util.write(txt)
             self.sock.send(util.toBytes(txt))
-    
-    def execute(self, command):
-        """
-        Execute the command by seperating it on '.' and then taking the first
-        index, (e.g. test.testing) and use the module 'src.commands.test.test'
-        and the class Test, then pass the second index 'testing' as an arg to
-        the __init__ of the class, which then executes the method.
-
-        """
-        cmd = self.splitCommand(command)
-        util.write("Executing %s.%s with args: %s" % (cmd[0], cmd[1], cmd[2],))
-        try:
-            # If there is only a module (ie $test)
-            if cmd[1] is None:
-                publicMethods = util.publicMethods(
-                    getattr(
-                        self.commandModules[cmd[0]], 
-                        cmd[0].title()
-                    )
-                )
-                self.replyWithMessage(
-                    "%s: %s" % (command.title(), publicMethods)
-                )
-            # If there is also a method on the module, and it isn't a private
-            # method (ie $test.testing)
-            elif not cmd[1].startswith('_'):
-                getattr(
-                    self.commandModules[cmd[0]],
-                    cmd[0].title()
-                )(self, cmdName=cmd[1], cmdArgs=cmd[2])
-            else:
-                self.replyWithMessage(
-                    "Methods starting with _ are private methods!"
-                )
-        except (AttributeError, KeyError):
-            if cmd[1] is not None:
-                self.replyWithMessage(
-                    "Command %s.%s was not found" % (cmd[0], cmd[1],)
-                )
-            else:
-                self.replyWithMessage(
-                    "Module '%s' was not found" % (cmd[0],)
-                )
-        except Exception as e:
-            self.replyWithMessage("Exception occured: %s " % (e,))
-    
-    def splitCommand(self, command):
+            time.sleep(timeout)
+            
+    def _splitCommand(self, command):
         """
         Split the command up into three parts at three indexes:
             0: class name
@@ -156,21 +108,70 @@ class Command(object):
         else:
             cmd[0] = command.lower()
         return cmd
+        
+    def execute(self, command):
+        """
+        Execute the command by seperating it on '.' and then taking the first
+        index, (e.g. test.testing) and use the module 'src.modules.test.test'
+        and the class Test, then pass the second index 'testing' as an arg to
+        the __init__ of the class, which then executes the method.
+
+        """
+        cmdClass, cmdMethod, cmdArgs = self._splitCommand(command)
+        util.write("Executing %s.%s with args: %s" % (
+            cmdClass,
+            cmdMethod,
+            cmdArgs
+        ))
+        try:
+            # If there is only a module (ie $test)
+            if cmdMethod is None:
+                publicMethods = util.publicMethods(
+                    getattr(
+                        self.importHandler.importedModules[cmdClass], 
+                        cmdClass.title()
+                    )
+                )
+                self.replyWithMessage(
+                    "%s: %s" % (command.title(), publicMethods)
+                )
+            # If there is also a method on the module, and it isn't a private
+            # method (ie $test.testing)
+            elif not cmdMethod.startswith('_'):
+                getattr(
+                    self.importHandler.importedModules[cmdClass],
+                    cmdClass.title()
+                )(self, cmdName=cmdMethod, cmdArgs=cmdArgs)
+            else:
+                self.replyWithMessage(
+                    "Methods starting with _ are private methods!"
+                )
+        except (AttributeError, KeyError):
+            if cmdMethod is not None:
+                self.replyWithMessage(
+                    "Command %s.%s was not found" % (cmdClass, cmdMethod,)
+                )
+            else:
+                self.replyWithMessage(
+                    "Module '%s' was not found" % (cmdClass,)
+                )
+        except Exception as e:
+            self.replyWithMessage("Exception occured: %s " % (e,))
     
     def help(self, command):
         """
         Look up the docstring for a given module or method from a module.
         """
         command = command[5:]
-        cmd = self.splitCommand(command)
-        util.write("Finding docstring for %s.%s" % (cmd[0], cmd[1]))
+        cmdClass, cmdMethod, cmdArgs = self._splitCommand(command)
+        util.write("Finding docstring for %s.%s" % (cmdClass, cmdMethod))
         try:
             # If there is only a module (ie $test)
-            if cmd[1] is None:
+            if cmdMethod is None:
                 docString = util.getDocstring(
                     getattr(
-                        self.commandModules[cmd[0]], 
-                        cmd[0].title()
+                        self.importHandler.importedModules[cmdClass], 
+                        cmdClass.title()
                     )
                 )
                 self.replyWithMessage(
@@ -178,61 +179,29 @@ class Command(object):
                 )
             # If there is also a method on the module, and it isn't a private
             # method (ie $test.testing)
-            elif not cmd[1].startswith('_'):
+            elif not cmdMethod.startswith('_'):
                 docString = util.getDocstring(
-                    cmd[1],
+                    cmdMethod,
                     targetClass=getattr(
-                    self.commandModules[cmd[0]],
-                    cmd[0].title()
+                    self.importHandler.importedModules[cmdClass],
+                    cmdClass.title()
                     )
                 )
                 self.replyWithMessage(
-                    "%s.%s: %s" % (cmd[0].title(), cmd[1], docString)
+                    "%s.%s: %s" % (cmdClass.title(), cmdMethod, docString)
                 )
             else:
                 self.replyWithMessage(
                     "Docstring: Methods starting with _ are private methods!"
                 )
         except (AttributeError, KeyError):
-            if cmd[1] is not None:
+            if cmdMethod is not None:
                 self.replyWithMessage(
-                    "Docstring: Command %s.%s was not found" % (cmd[0], cmd[1],)
+                    "Docstring: Command %s.%s was not found" % (cmdClass, cmdMethod,)
                 )
             else:
                 self.replyWithMessage(
-                    "Docstring: Module '%s' was not found" % (cmd[0],)
+                    "Docstring: Module '%s' was not found" % (cmdClass,)
                 )
         except Exception as e:
             self.replyWithMessage("Docstring: Exception occured: %s " % (e,))
-
-    def update(self, mod=None):
-        """
-        Reload all the command modules previously imported and saved to the
-        class variable commandModules.
-
-        """
-        moduleNotFound = True
-        self.loadTheModules()
-        for name, module in self.commandModules.items():
-            if mod is None or name == mod:
-                imp.reload(module)
-                moduleNotFound = False
-        if moduleNotFound: 
-            self.replyWithMessage("No module named %s." % (mod,))
-        else:
-            self.replyWithMessage("Modules have been updated!")
-
-
-    def loadTheModules(self):
-        """
-        Dynamically load all the packages/modules in src/commands and add them
-        to the class variable commandModules in the format: 
-            name: moduleObject
-        So we can easily refer to them later.
-        
-        """
-        for importer, package_name, _ in pkgutil.iter_modules(['src/commands']):
-            full_pkg_name = 'src.commands.%s.%s' % (package_name, package_name)
-            module = importlib.import_module(full_pkg_name)
-            self.commandModules[package_name.lower()] = module
-        

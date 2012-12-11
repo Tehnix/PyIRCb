@@ -23,7 +23,7 @@ class User(src.module.ModuleBase):
             cmdArgs=cmdArgs,
             authRequired=['rm']
         )
-        self.db = self._createDatabase('database.sqlite3')
+        self.db = 'database.sqlite3'
         self._createTables([
             'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, nickname TEXT, password TEXT, server TEXT)'
         ])

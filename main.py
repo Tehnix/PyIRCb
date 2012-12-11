@@ -9,7 +9,7 @@ from optparse import OptionParser
 
 import src.utilities as util
 import src.settings
-import src.irc.dispatcher
+import src.irc.botDispatcher
 
 
 PARSER_DESC = "A python based IRC bot"
@@ -42,7 +42,7 @@ def main():
             generateConf=options.conf
         )
     else:
-        botDispatcherInstance = src.irc.dispatcher.BotDispatcher()
+        botDispatcherInstance = src.irc.botDispatcher.BotDispatcher()
 
 if __name__ == '__main__':
     main()
