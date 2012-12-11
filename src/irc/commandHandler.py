@@ -26,7 +26,7 @@ class CommandHandler(object):
         self.user = ""
         self.channel = ""
         self.msgType = "PRIVMSG"
-        self.importHandler = src.irc.importHandler.ImportHandler()
+        self.importHandler = src.irc.importHandler.ImportHandler(self)
     
     def pong(self, data):
         """Respond to a PING with a PONG."""

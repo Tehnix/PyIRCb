@@ -48,7 +48,7 @@ At the moment there are several modules that go with the system by default. The 
 - CloudFlare module (cf): Get statistics from your CloudFlare site, and also purge your CloudFlare cache.
 
 ## Module Development ##
-You can generate a module with the scaffolding by doing `./main.py module mymodule`, which creates the module mymodule for you in the modules directory.
+You can generate a module with the scaffolding by doing `./main.py -m mymodule`, which creates the module mymodule for you in the modules directory.
 
 #### A little bit about modules: ####
 
@@ -95,13 +95,11 @@ All the command line options can be seen in the help menu of the bot, by typing 
 
     A python based IRC bot
 
-    positional arguments:
-      module         generate a module scaffold
-
     optional arguments:
       -h, --help     show this help message and exit
       -c, --config   generate a default configuration file
       -v, --verbose  print output to stdout
+      -m--module MODULE  generate a module scaffold
 </pre>
 
 ## License ##

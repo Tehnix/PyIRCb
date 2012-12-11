@@ -9,6 +9,7 @@ import sys
 import time
 import socket
 
+from main import UpdateSourceCode
 import src.utilities as util
 import src.irc.commandHandler
 
@@ -48,7 +49,9 @@ class DataParser(object):
                 self.server.connect = False
                 break
             except (KeyboardInterrupt, SystemExit):
-                sys.exit(1)
+                self.commandHandler.replyWithMessage('Shutting down the bot')
+                self.server.connect = False
+                break
             except UnicodeDecodeError:
                 continue
             except UnicodeEncodeError:
@@ -108,8 +111,8 @@ class DataParser(object):
                 self.commandHandler.help(cmd)
             elif data[2].startswith('%stopic' % self.server.operator):
                 self.commandHandler.topic(cmd[6:])
-            elif data[2].startswith('%susers' % self.server.operator):
-                self.commandHandler.displayUsers()
+            #elif data[2].startswith('%ssource' % self.server.operator):
+            #    raise UpdateSourceCode
             elif data[2].startswith(self.server.operator):
                 self.commandHandler.execute(cmd)
         elif data[1].split()[1] in ['INVITE', 'PART', 'QUIT', 'KICK', 'JOIN', 'NICK']:
