@@ -21,7 +21,7 @@ class Project(src.moduleBase.ModuleBase):
         )
         self.db = 'database.sqlite3'
         self._createTables([
-            'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY, userId INTEGER, name TEXT, dir TEXT)'
+            'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY, userId INTEGER, name TEXT, dir TEXT, repo TEXT)'
         ])
         self.userModule = src.modules.user.user.User(cmdInstance)
         if cmdName is not None:
@@ -125,6 +125,39 @@ class Project(src.moduleBase.ModuleBase):
             self.reply("Added project '%s' to user %s" % (projectName, user,))
         else:
             self.reply("Please create a user account for '%s' first." % (user,))
+            
+    def mod(self):
+        """Modify a project value in the database. Usage: project.mod <user> <project> {user,name,dir,repo} <value>"""
+        # userId INTEGER, name TEXT, dir TEXT, repo 
+        try:
+            user, projectName, field, value = self.args.split()
+        except ValueError:
+            pass
+        newData = {}
+        if field == "user":
+            try:
+                newUser["user"] = self.userModule._getUid(util.toBytes(value))
+            except:
+                self.reply("No valid user!")
+            newData["user"] = newUser
+        elif field == "dir":
+            newData["dir"] = value
+        elif field == "repo":
+            newData["repo"] = value
+        elif field == "name":
+            newData["name"] = value
+        self.db.up date(
+            table="project",
+            data=newData,
+            filters={
+                "user": user,
+                "name": projectName
+            }
+        )    
+        self.reply("Modified %s on project %s too %s"%(field, projectName, value))
+        
+        
+        
         
     def rm(self):
         """Remove a project from the database. Usage: project.rm <project name> [here]. If no user is supplied, it will be implied that the user is the command issuer."""
