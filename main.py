@@ -43,28 +43,20 @@ parser.add_argument(
 
 options = parser.parse_args()
 
-
-class UpdateSourceCode(Exception):
-    pass
-
-
 def main():
-    try:
-        util.verbose = options.verbose
-        if options.module:
-            modName = options.module[0].lower()
-            if ' ' in modName:
-                print("Modules can't have spaces in them!")
-            else:
-                createScaffold(modName)
-        elif options.conf:
-            settingsInstance = src.settings.Settings(
-                generateConf=options.conf
-            )
+    util.verbose = options.verbose
+    if options.module:
+        modName = options.module[0].lower()
+        if ' ' in modName:
+            print("Modules can't have spaces in them!")
         else:
-            botDispatcherInstance = src.irc.botDispatcher.BotDispatcher()
-    except UpdateSourceCode:
-        print('You know, I could totally update the source code and suche here...')
+            createScaffold(modName)
+    elif options.conf:
+        settingsInstance = src.settings.Settings(
+            generateConf=options.conf
+        )
+    else:
+        botDispatcherInstance = src.irc.botDispatcher.BotDispatcher()
 
 def createScaffold(modName):
     basePath = os.path.join('src', 'modules')

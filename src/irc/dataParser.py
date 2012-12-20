@@ -9,7 +9,6 @@ import sys
 import time
 import socket
 
-from main import UpdateSourceCode
 import src.utilities as util
 import src.irc.commandHandler
 
@@ -73,9 +72,9 @@ class DataParser(object):
             self.serverActions(data)
         else:
             try:
-                if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
+                if data.split(':')[1].split()[1] in ['PRIVMSG', 'NOTICE']:
                     self.userCommands(data)
-                elif data[1].split()[1] in ['INVITE', 'PART', 'QUIT', 'KICK', 'JOIN', 'NICK']:
+                elif data.split(':')[1].split()[1] in ['INVITE', 'PART', 'QUIT', 'KICK', 'JOIN', 'NICK']:
                     self.userActions(data)
             except IndexError:
                 pass
@@ -113,8 +112,6 @@ class DataParser(object):
             self.commandHandler.help(cmd)
         elif data[2].startswith('%stopic' % self.server.operator):
             self.commandHandler.topic(cmd[6:])
-        #elif data[2].startswith('%ssource' % self.server.operator):
-        #    raise UpdateSourceCode
         elif data[2].startswith(self.server.operator):
             self.commandHandler.execute(cmd)
         
