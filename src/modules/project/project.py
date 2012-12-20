@@ -146,7 +146,7 @@ class Project(src.moduleBase.ModuleBase):
             newData["repo"] = value
         elif field == "name":
             newData["name"] = value
-        self.db.up date(
+        self.db.update(
             table="project",
             data=newData,
             filters={
@@ -155,9 +155,6 @@ class Project(src.moduleBase.ModuleBase):
             }
         )    
         self.reply("Modified %s on project %s too %s"%(field, projectName, value))
-        
-        
-        
         
     def rm(self):
         """Remove a project from the database. Usage: project.rm <project name> [here]. If no user is supplied, it will be implied that the user is the command issuer."""
