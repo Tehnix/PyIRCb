@@ -189,7 +189,7 @@ class CommandHandler(object):
         util.write("Finding docstring for %s.%s" % (cmdClass, cmdMethod))
         try:
             # If there is only a module (ie $test)
-            if cmdClass is None:
+            if cmdClass is None or cmdClass == '':
                 self.replyWithMessage(
                     "Usage: help module.command to get information on a specific command, or help module to just get info on the module."
                 )
