@@ -129,6 +129,13 @@ class CommandHandler(object):
             cmd[0] = command.lower()
         return cmd
         
+    def grabClass(self, cmdClass):
+        """Returns the class object."""
+        return getattr(
+            self.importHandler.importedModules[cmdClass], 
+            cmdClass.title()
+        )
+        
     def execute(self, command):
         """
         Execute the command by seperating it on '.' and then taking the first
@@ -147,10 +154,7 @@ class CommandHandler(object):
             # If there is only a module (ie $test)
             if cmdMethod is None:
                 publicMethods = util.publicMethods(
-                    getattr(
-                        self.importHandler.importedModules[cmdClass], 
-                        cmdClass.title()
-                    )
+                    self.grabClass(cmdClass)
                 )
                 self.replyWithMessage(
                     "%s: %s" % (command.title(), publicMethods)
@@ -158,10 +162,7 @@ class CommandHandler(object):
             # If there is also a method on the module, and it isn't a private
             # method (ie $test.testing)
             elif not cmdMethod.startswith('_'):
-                getattr(
-                    self.importHandler.importedModules[cmdClass],
-                    cmdClass.title()
-                )(self, cmdName=cmdMethod, cmdArgs=cmdArgs)
+                self.grabClass(cmdClass)(self, cmdName=cmdMethod, cmdArgs=cmdArgs)
             else:
                 self.replyWithMessage(
                     "Methods starting with _ are private methods!"
@@ -188,12 +189,13 @@ class CommandHandler(object):
         util.write("Finding docstring for %s.%s" % (cmdClass, cmdMethod))
         try:
             # If there is only a module (ie $test)
-            if cmdMethod is None:
+            if cmdClass is None:
+                self.replyWithMessage(
+                    "Usage: help module.command to get information on a specific command, or help module to just get info on the module."
+                )
+            elif cmdMethod is None:
                 docString = util.getDocstring(
-                    getattr(
-                        self.importHandler.importedModules[cmdClass], 
-                        cmdClass.title()
-                    )
+                    self.grabClass(cmdClass)
                 )
                 self.replyWithMessage(
                     "%s: %s" % (command.title(), docString)
@@ -203,10 +205,7 @@ class CommandHandler(object):
             elif not cmdMethod.startswith('_'):
                 docString = util.getDocstring(
                     cmdMethod,
-                    targetClass=getattr(
-                    self.importHandler.importedModules[cmdClass],
-                    cmdClass.title()
-                    )
+                    targetClass=self.grabClass(cmdClass)
                 )
                 self.replyWithMessage(
                     "%s.%s: %s" % (cmdClass.title(), cmdMethod, docString)

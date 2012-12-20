@@ -73,7 +73,10 @@ class DataParser(object):
             self.serverActions(data)
         else:
             try:
-                self.userActions(data)
+                if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
+                    self.userCommands(data)
+                elif data[1].split()[1] in ['INVITE', 'PART', 'QUIT', 'KICK', 'JOIN', 'NICK']:
+                    self.userActions(data)
             except IndexError:
                 pass
 
@@ -93,44 +96,47 @@ class DataParser(object):
             self.commandHandler.ident()
             self.commandHandler.joinRooms(self.server.channels)
 
-    def userActions(self, data):
+    def userCommands(self, data):
         """Commands invoked by the user."""
         data = data.split(':')
         cmd = ':'.join(data[2:])[1:]
-        if data[1].split()[1] in ['PRIVMSG', 'NOTICE']:
-            self.commandHandler.user = data[1].split()[0].split('!')[0]
-            self.commandHandler.channel = data[1].split()[2]
-            self.commandHandler.msgType = data[1].split()[1]
-            if data[2].lower().startswith('%supdate' % self.server.operator):
-                update = cmd.lower().split()
-                try:
-                    self.commandHandler.importHandler.update(update[1])
-                except IndexError:
-                    self.commandHandler.importHandler.update()
-            elif data[2].startswith('%shelp' % self.server.operator):
-                self.commandHandler.help(cmd)
-            elif data[2].startswith('%stopic' % self.server.operator):
-                self.commandHandler.topic(cmd[6:])
-            #elif data[2].startswith('%ssource' % self.server.operator):
-            #    raise UpdateSourceCode
-            elif data[2].startswith(self.server.operator):
-                self.commandHandler.execute(cmd)
-        elif data[1].split()[1] in ['INVITE', 'PART', 'QUIT', 'KICK', 'JOIN', 'NICK']:
-            action = data[1].split()[1]
-            user = data[1].split()[0].split('!')[0]
-            if action == 'INVITE':
-                self.commandHandler.joinRoom(data[2])
-            elif action == 'PART':
-                self.server.channels[data[1].split()[2]].removeUser(user)
-            elif action == 'QUIT':
-                self.server.userQuit(user)
-            elif action == 'JOIN':
-                self.server.channels[data[2]].addUser(user)
-            elif action == 'KICK':
-                self.server.channels[data[1].split()[2]].removeUser(user)
-            elif action == 'NICK':
-                self.server.nickChange(user, data[2])
-    
+        self.commandHandler.user = data[1].split()[0].split('!')[0]
+        self.commandHandler.channel = data[1].split()[2]
+        self.commandHandler.msgType = data[1].split()[1]
+        if data[2].lower().startswith('%supdate' % self.server.operator):
+            update = cmd.lower().split()
+            try:
+                self.commandHandler.importHandler.update(update[1])
+            except IndexError:
+                self.commandHandler.importHandler.update()
+        elif data[2].startswith('%shelp' % self.server.operator):
+            self.commandHandler.help(cmd)
+        elif data[2].startswith('%stopic' % self.server.operator):
+            self.commandHandler.topic(cmd[6:])
+        #elif data[2].startswith('%ssource' % self.server.operator):
+        #    raise UpdateSourceCode
+        elif data[2].startswith(self.server.operator):
+            self.commandHandler.execute(cmd)
+        
+    def userActions(self, data):
+        """Actions invoked by the user."""
+        data = data.split(':')
+        cmd = ':'.join(data[2:])[1:]
+        action = data[1].split()[1]
+        user = data[1].split()[0].split('!')[0]
+        if action == 'INVITE':
+            self.commandHandler.joinRoom(data[2])
+        elif action == 'PART':
+            self.server.channels[data[1].split()[2]].removeUser(user)
+        elif action == 'QUIT':
+            self.server.userQuit(user)
+        elif action == 'JOIN':
+            self.server.channels[data[2]].addUser(user)
+        elif action == 'KICK':
+            self.server.channels[data[1].split()[2]].removeUser(user)
+        elif action == 'NICK':
+            self.server.nickChange(user, data[2])
+        
     def disconnect(self):
         """Invoke the disconnect command on the Command object."""
         self.commandHandler.disconnect()
