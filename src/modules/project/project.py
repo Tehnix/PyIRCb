@@ -96,7 +96,7 @@ class Project(src.moduleBase.ModuleBase):
         if users is not None:
             for user in users:
                 projects = self._projects(user[0])
-                if projects is not None:
+                if projects:
                     self.reply("Owner: %s" % util.toUnicode(user[1]))
                 i = 1
                 for project in projects:
